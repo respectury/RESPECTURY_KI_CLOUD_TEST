@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RESPECTURY DIGITAL REPORT® V18.3</title>
+<meta name="theme-color" content="#051425">
+
+<!-- PDF-Engine: wird später für echten Offline-Betrieb lokal ins Projekt übernommen -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root{
+ --bg:#051425;--card:#0A1F3A;--border:#153B66;--text:#E8F4FF;
+ --text2:#7B9AB8;--accent:#00A8FF;--gold:#FFC700;--green:#00FF88;
+ --red:#FF4444;--orange:#FF8C00;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",Arial,sans-serif}
+body{background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:1920px;margin:auto;min-height:100vh;background:var(--card);display:flex;flex-direction:column}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:15px 30px;border-bottom:1px solid var(--border);gap:15px;flex-wrap:wrap}
+.brand{display:flex;gap:12px;align-items:center}.name{font-size:22px;font-weight:800}.name span{color:var(--accent)}
+.sub{font-size:10px;color:var(--text2)}
+.top_right_controls{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+.top_stats_box{display:flex;gap:8px;flex-wrap:wrap}
+.top_stat_item{background:#001A33;border:1px solid var(--border);border-radius:6px;padding:6px 12px;text-align:center;min-width:82px;font-size:11px}
+.top_stat_item div:first-child{color:var(--text2);font-size:9px}.top_stat_item div:last-child{color:var(--gold);font-weight:800}
+.steps{display:flex;gap:6px;padding:12px 30px;overflow-x:auto;background:#061828;border-bottom:1px solid var(--border)}
+.step{padding:8px 14px;background:#0A1F3A;border:1px solid var(--border);border-radius:6px;cursor:pointer;white-space:nowrap;font-size:12px;color:var(--text2)}
+.step.active{background:var(--accent);color:var(--bg);font-weight:700}
+.pagehead{background:linear-gradient(90deg,#003D7A,#00A8FF);display:flex;align-items:center;gap:15px;padding:12px 30px}
+.pagenr{background:var(--bg);padding:5px 14px;border-radius:4px;font-weight:800;font-size:16px}
+#page_title_text{font-weight:800}
+.main-wrapper{display:flex;flex:1;min-height:0}
+.left-sidebar-pane{width:260px;background:#08182E;border-right:1px solid var(--border);padding:15px;overflow-y:auto}
+.middle-workspace-pane{flex:1;padding:25px;overflow-y:auto;display:flex;flex-direction:column;gap:20px;min-width:0}
+.right-summary-pane{width:340px;background:#08182E;border-left:1px solid var(--border);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:15px}
+.card{border:1px solid var(--border);background:#0A1F3A;border-radius:8px;padding:20px;width:100%}
+.card-title,.section-title{color:var(--gold);font-weight:700;margin-bottom:14px;font-size:13px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:6px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;gap:10px}
+.input{background:#020D1A;border:1px solid var(--border);color:var(--text);width:100%;font-size:14px;padding:8px;border-radius:4px}
+.input:focus{border-color:var(--accent);outline:none}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-group{display:flex;flex-direction:column;gap:4px}.form-group label{font-size:11px;color:var(--text2)}
+.btnbar{position:sticky;bottom:0;background:var(--card);padding:14px 30px;border-top:1px solid var(--border);display:flex;justify-content:space-between;z-index:50}
+.btn{background:var(--accent);color:var(--bg);border:0;padding:12px 24px;border-radius:6px;font-weight:800;cursor:pointer;font-size:14px}
+.btn.gold{background:var(--gold)}.btn.danger{background:#DC2626;color:#fff}.btn.ghost{background:#153B66;color:var(--text)}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+.paket-box{border:2px solid var(--border);border-radius:10px;padding:15px;margin-bottom:10px;cursor:pointer;background:#001A33;transition:.2s}
+.paket-box:hover{border-color:var(--accent)}.paket-box.active{border-color:var(--gold);box-shadow:0 0 15px #ffc70026}.paket-section-title{margin:18px 0 10px;color:var(--gold);font-size:12px;font-weight:800;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:7px}.paket-grid-v15{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.paket-card-v15{border:2px solid var(--border);border-radius:10px;padding:14px;background:#001A33;cursor:pointer;transition:.2s;min-height:145px}.paket-card-v15:hover{border-color:var(--accent);transform:translateY(-1px)}.paket-card-v15.active{border-color:var(--gold);box-shadow:0 0 15px #ffc70026}.paket-card-v15.combo{background:linear-gradient(145deg,#071d35,#10233d)}.paket-card-v15.combo.active{border-color:var(--accent);box-shadow:0 0 15px #00a8ff33}.paket-badge-v15{display:inline-block;padding:3px 7px;border-radius:4px;font-size:9px;font-weight:800;background:#153B66;color:var(--text)}.paket-card-v15.combo .paket-badge-v15{background:var(--accent);color:var(--bg)}.paket-price-v15{font-size:18px;font-weight:900;color:var(--gold);margin-top:10px}.paket-desc-v15{font-size:10px;color:var(--text2);line-height:1.45;margin-top:5px}.workflow-status-v15{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.workflow-box-v15{background:#001A33;border:1px solid var(--border);border-radius:8px;padding:12px}.workflow-box-v15 b{display:block;margin-bottom:5px}@media(max-width:1100px){.paket-grid-v15{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.paket-grid-v15{grid-template-columns:1fr}.workflow-status-v15{grid-template-columns:1fr}}
+.room-nav-tile,.zaehler-nav-tile{background:#001A33;border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;margin-bottom:8px}
+.room-nav-tile.active,.zaehler-nav-tile.active{border-color:var(--gold)}
+.room-nav-tile.checked,.zaehler-nav-tile.checked{border-color:var(--green)}
+.main-photo{background:#001A33;border:2px dashed var(--accent);border-radius:8px;height:230px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;color:var(--text2);font-size:13px}
+.main-photo img{width:100%;height:100%;object-fit:contain}
+.thumb-list{display:flex;gap:8px;overflow-x:auto;padding-bottom:5px}
+.thumb-tile{width:82px;height:70px;background:#001A33;border:1px solid var(--border);border-radius:6px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;text-align:center;cursor:pointer;position:relative;overflow:hidden}
+.thumb-tile.active{border-color:var(--gold)}.thumb-tile.has-image{border-color:var(--green)}
+.thumb-tile img{position:absolute;width:100%;height:100%;object-fit:cover}
+.thumb-tile .badge{position:absolute;bottom:2px;background:#000b;color:#fff;padding:2px 4px;border-radius:3px}
+.live-box{background:#001A33;border:1px solid var(--border);border-radius:8px;padding:12px}
+.live-box h4{color:var(--gold);font-size:11px;margin-bottom:7px;border-bottom:1px solid var(--border);padding-bottom:4px}
+.live-line{display:flex;justify-content:space-between;font-size:11px;margin:5px 0;gap:8px}.live-line span:first-child{color:var(--text2)}
+.live-total-line{border-top:1px dashed var(--border);padding-top:6px;margin-top:6px;font-weight:800;color:var(--green)}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.btn-accept{width:100%;padding:12px;background:var(--green);color:#000;border:0;border-radius:6px;font-weight:800;cursor:pointer;margin-top:10px}
+.btn-add-z{width:100%;padding:10px;background:#001A33;border:1px dashed var(--accent);color:var(--accent);font-weight:700;border-radius:6px;cursor:pointer}
+.status{display:inline-block;padding:3px 7px;border-radius:4px;font-size:10px;font-weight:800}
+.status.ok{color:var(--green);background:#00ff8815}.status.open{color:var(--orange);background:#ff8c0015}
+#datenschutz_modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.modal{max-width:700px;background:#0A1F3A;border:1px solid var(--border);border-radius:12px;padding:25px;box-shadow:0 20px 60px #000}
+.modal h2{color:var(--accent);margin-bottom:15px}.modal p{color:var(--text2);font-size:12px;line-height:1.6;margin-bottom:12px}
+canvas{border:1px solid var(--border);border-radius:6px;background:#fff;cursor:crosshair;touch-action:none;width:100%;max-width:600px;height:220px;display:block;margin:auto}
+.notice{background:#001A33;border-left:3px solid var(--gold);padding:12px;font-size:12px;line-height:1.5}
+.preview-row{padding:10px;border-bottom:1px solid var(--border);font-size:12px}
+.preview-row b{color:var(--accent)}
+@media(max-width:1000px){.left-sidebar-pane{width:210px}.right-summary-pane{width:280px}}
+@media(max-width:750px){.main-wrapper{display:block}.left-sidebar-pane,.right-summary-pane{width:100%;border:0}.middle-workspace-pane{padding:15px}.form-grid{grid-template-columns:1fr}.btnbar{padding:12px 15px}}
+
+.todo-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}.todo-item input{accent-color:var(--gold);width:18px;height:18px}.todo-done{text-decoration:line-through;color:var(--text2)}.todo-add{display:flex;gap:8px;margin-top:12px}.todo-add .input{flex:1}.meter-summary{background:#001A33;border:1px solid var(--border);border-radius:7px;padding:10px;margin-top:8px}.meter-summary b{color:var(--accent)}.paket-card-v15.vorabnahme{background:linear-gradient(145deg,#10233d,#071d35)}.paket-card-v15.vorabnahme.active{border-color:var(--gold);box-shadow:0 0 18px #ffc70033}
+.ki-panel{margin-top:10px;background:#001A33;border:1px solid var(--border);border-radius:8px;padding:10px}.ki-panel .ki-title{color:var(--gold);font-weight:800;font-size:12px;margin-bottom:7px}.ki-result{font-size:12px;line-height:1.5}.ki-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.ki-badge{display:inline-block;padding:3px 7px;border-radius:4px;background:#00ff8815;color:var(--green);font-weight:800;font-size:10px}.ki-error{color:#ff8c00}.ki-spinner{display:inline-block;width:12px;height:12px;border:2px solid #557;border-top-color:#00a8ff;border-radius:50%;animation:kiSpin .8s linear infinite;vertical-align:-2px;margin-right:5px}@keyframes kiSpin{to{transform:rotate(360deg)}}
+</style>
+<style>.v184-bemerkungs-wrap{margin-top:8px}.v184-toggle{width:100%;text-align:left;padding:9px 12px;border:1px solid #b9c9d8;border-radius:7px;background:#f5f9fc;color:#053269;font-weight:700;cursor:pointer}.v184-suggestions{display:none;margin-top:7px;max-height:270px;overflow:auto;border:1px solid #d5dee7;border-radius:7px;background:#fff;padding:5px}.v184-suggestions.v184-open{display:block}.v184-satz{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #edf1f4;background:#fff;padding:8px 6px;cursor:pointer;color:#253746;font-size:13px;line-height:1.35}.v184-satz:hover{background:#eef7ff}.v184-satz span{color:#00a8ff;font-weight:800;margin-right:5px}</style><style id="v184_print_readability">
+.v184-pdf-note{margin-top:14px;padding-top:9px;border-top:0.35mm solid #777;font-family:Helvetica,Arial,sans-serif;font-size:9.5pt;line-height:1.38;color:#111}
+.v184-pdf-note-title{font-weight:700;font-size:10.5pt;margin-bottom:5px}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header class="topbar">
+ <div class="brand">
+  <div class="name">respect<span>ury</span></div>
+  <div class="sub">DIGITAL REPORT® V18.3</div>
+ </div>
+ <div class="top_right_controls">
+  <div class="top_stats_box">
+   <div class="top_stat_item"><div>Auftrag</div><div id="top_auftrag">-</div></div>
+   <div class="top_stat_item"><div>Paket</div><div id="top_paket">-</div></div>
+   <div class="top_stat_item"><div>Räume</div><div id="top_raeume">0/0</div></div>
+   <div class="top_stat_item"><div>Fotos</div><div id="top_fotos">0</div></div>
+  </div>
+  <button class="btn danger" onclick="triggerNewAuftrag()">🔄 Neuer Auftrag</button>
+ </div>
+</header>
+
+<nav class="steps" id="steps_bar">
+ <div class="step" data-page="1" onclick="jumpToPage(1)">📦 Paket</div>
+ <div class="step" data-page="2" onclick="jumpToPage(2)">📍 Objekt</div>
+ <div class="step" data-page="3" onclick="jumpToPage(3)">👤 Kunde</div>
+ <div class="step" data-page="4" onclick="jumpToPage(4)">💵 Leistungen</div>
+ <div class="step" data-page="5" onclick="jumpToPage(5)">⭐ Modus</div>
+ <div class="step" data-page="6" onclick="jumpToPage(6)">📁 Hub</div>
+ <div class="step" data-page="7" onclick="jumpToPage(7)">🏠 Räume</div>
+ <div class="step" data-page="8" onclick="jumpToPage(8)">⚡ Zähler</div>
+ <div class="step" data-page="9" onclick="jumpToPage(9)">📋 Vorschau</div>
+ <div class="step" data-page="10" onclick="jumpToPage(10)">✍️ Signatur</div>
+</nav>
+
+<div class="pagehead">
+ <div class="pagenr" id="page_number">01</div>
+ <div id="page_title_text">LEISTUNGS-PAKET AUSWÄHLEN</div>
+</div>
+
+<main class="main-wrapper">
+ <aside class="left-sidebar-pane" id="pane_left"></aside>
+ <section class="middle-workspace-pane" id="pane_middle"></section>
+ <aside class="right-summary-pane" id="pane_right"></aside>
+</main>
+
+<footer class="btnbar">
+ <button class="btn ghost" onclick="changePage(-1)">← Zurück</button>
+ <button class="btn gold" id="next_btn" onclick="changePage(1)">Weiter →</button>
+</footer>
+</div>
+
+<div id="datenschutz_modal">
+ <div class="modal">
+  <h2>🔒 DSGVO-DATENSCHUTZ & INBETRIEBNAHME V18.1</h2>
+  <p><b>PFLICHT-RECHTSHINWEIS:</b> Automatische KI-Schadensdetektionen und Zählerablesungen sind unverbindliche Technologie-Vorschläge. Der sachkundige Anwender muss alle Werte prüfen und bestätigen.</p>
+  <p><b>Offline-Sicherheit:</b> Protokolle werden grundsätzlich lokal auf diesem Gerät verarbeitet und gespeichert.</p>
+  <p><b>Cloud-Sync:</b> Eine spätere Synchronisation kann bei vorhandener Internetverbindung ergänzt werden.</p>
+  <label class="check"><input type="checkbox" id="chk_agb"> Ich akzeptiere die Nutzungsbedingungen und den KI-Haftungsausschluss.</label>
+  <br>
+  <label class="check"><input type="checkbox" id="chk_dsgvo"> Ich willige in die digitale Erfassung von Mieterdaten, Fotos und Unterschriften ein.</label>
+  <br><br>
+  <button class="btn" onclick="acceptPrivacy()">System freischalten & starten</button>
+ </div><div class="v184-pdf-note">
+<div class="v184-pdf-note-title">Bestätigung</div>
+Die unterzeichnenden Parteien bestätigen mit ihrer Unterschrift die Richtigkeit und Vollständigkeit der in diesem Protokoll dokumentierten Angaben sowie den Zustand des Objekts zum Zeitpunkt der Besichtigung.
+<br><br>
+Automatische KI-Ergebnisse wurden durch den Anwender geprüft und verifiziert.
+</div>
+</div>
+
+<script>
+"use strict";
+
+let currentPage=1;
+let activeRoomIdx=0;
+let activeKachelIdx=0;
+let activeZaehlerIdx=0;
+let canvas=null,ctx=null,drawing=false;
+let dienstleisterCanvas=null,dienstleisterCtx=null,mieterCanvas=null,mieterCtx=null;
+
+const fotoKachelnTemplate=[
+ {key:"w1",label:"Wand 1",icon:"🧱",data:""},
+ {key:"w2",label:"Wand 2",icon:"🧱",data:""},
+ {key:"w3",label:"Wand 3",icon:"🧱",data:""},
+ {key:"w4",label:"Wand 4",icon:"🧱",data:""},
+ {key:"bo",label:"Boden",icon:"🪵",data:""},
+ {key:"de",label:"Decke",icon:"⚪",data:""},
+ {key:"fe",label:"Fenster",icon:"🪟",data:""},
+ {key:"tu",label:"Tür",icon:"🚪",data:""},
+ {key:"hz",label:"Heizung",icon:"🔥",data:""},
+ {key:"zu",label:"Zusatz",icon:"➕",data:""}
+];
+
+
+/* V18: Fotos separat von Auftragsdaten speichern (IndexedDB). */
+const PHOTO_DB_NAME="respectury_v18_photos";
+const PHOTO_DB_VERSION=1;
+const PHOTO_STORE="photos";
+function openPhotoDB(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(new Error("IndexedDB nicht verfügbar"));return;}const req=indexedDB.open(PHOTO_DB_NAME,PHOTO_DB_VERSION);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(PHOTO_STORE))db.createObjectStore(PHOTO_STORE);};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("Foto-Datenbank konnte nicht geöffnet werden"));});}
+function dataUrlToBlob(dataUrl){const parts=String(dataUrl).split(",");const mime=(parts[0].match(/data:([^;]+)/)||[])[1]||"image/jpeg";const binary=atob(parts[1]||"");const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return new Blob([bytes],{type:mime});}
+function blobToDataUrl(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error||new Error("Foto konnte nicht gelesen werden"));reader.readAsDataURL(blob);});}
+async function putPhoto(ref,dataUrl){if(!dataUrl)return;const db=await openPhotoDB();const blob=dataUrlToBlob(dataUrl);await new Promise((resolve,reject)=>{const tx=db.transaction(PHOTO_STORE,"readwrite");tx.objectStore(PHOTO_STORE).put(blob,ref);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error("Foto konnte nicht gespeichert werden"));});db.close();}
+async function getPhoto(ref){if(!ref)return "";const db=await openPhotoDB();const blob=await new Promise((resolve,reject)=>{const tx=db.transaction(PHOTO_STORE,"readonly");const req=tx.objectStore(PHOTO_STORE).get(ref);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||new Error("Foto konnte nicht geladen werden"));});db.close();return blob?await blobToDataUrl(blob):"";}
+async function deletePhoto(ref){if(!ref)return;try{const db=await openPhotoDB();await new Promise((resolve,reject)=>{const tx=db.transaction(PHOTO_STORE,"readwrite");tx.objectStore(PHOTO_STORE).delete(ref);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});db.close();}catch(e){console.warn("Foto löschen:",e);}}
+function photoRefForRoom(room,k){return `room_${appState.auftrag}_${room.id}_${k.key}`;}
+function photoRefForMeter(z){return `meter_${appState.auftrag}_${z.id}`;}
+async function hydratePhotoStore(){let changed=false;for(const r of (appState.raeume||[])){for(const k of (r.formKachelDaten||[])){if(k.data){const ref=k.photoRef||photoRefForRoom(r,k);try{await putPhoto(ref,k.data);k.photoRef=ref;changed=true;}catch(e){console.warn("Raumfoto-Migration:",e);}}}}for(const z of (appState.zaehler||[])){if(z.foto){const ref=z.photoRef||photoRefForMeter(z);try{await putPhoto(ref,z.foto);z.photoRef=ref;changed=true;}catch(e){console.warn("Zählerfoto-Migration:",e);}}}for(const r of (appState.raeume||[])){for(const k of (r.formKachelDaten||[])){if(k.photoRef&&!k.data){try{k.data=await getPhoto(k.photoRef);}catch(e){console.warn("Raumfoto laden:",e);}}}}for(const z of (appState.zaehler||[])){if(z.photoRef&&!z.foto){try{z.foto=await getPhoto(z.photoRef);}catch(e){console.warn("Zählerfoto laden:",e);}}}if(changed)saveState();}
+
+function defaultState(){
+ return {
+  paket:"",preis:0,auftrag:"",
+  objekt:{strasse:"",hausnummer:"",plz:"",ort:"",etage:"EG",raumAnzahl:5},
+  kunde:{firma:"",name:"",email:"",telefon:""},
+  leistungen:{anfahrtAktiv:false,km:0,anfahrtPreis:0,putzmittel:false,materialPreis:0,zusatzReinigung:false,zusatzReinigungPreis:85,wohnflaecheAktiv:false,wohnflaeche:0,mehrflaeche:0,wohnflaechePreis:0},
+  arbeitsmodus:"Wohnungsübergabe",
+  vorabnahme:{todos:[
+   {id:"todo_1",text:"Mängel / Restarbeiten prüfen",done:false},
+   {id:"todo_2",text:"Wände / Decken prüfen",done:false},
+   {id:"todo_3",text:"Böden / Türen / Fenster prüfen",done:false},
+   {id:"todo_4",text:"Zählerstände erfassen",done:false},
+   {id:"todo_5",text:"Fotodokumentation vollständig",done:false}
+  ]},
+  raeume:[],
+  zaehler:[
+   {id:"z_str",typ:"Stromzähler",name:"Hauptzähler",einheit:"kWh",nummer:"",wert:"",kiWert:"",foto:"",status:"missing",hersteller:"-",modell:"-",konfidenz:"-"},
+   {id:"z_was",typ:"Kaltwasserzähler",name:"Kaltwasseruhr",einheit:"m³",nummer:"",wert:"",kiWert:"",foto:"",status:"missing",hersteller:"-",modell:"-",konfidenz:"-"}
+  ]
+ };
+}
+
+let appState=defaultState();
+
+document.addEventListener("DOMContentLoaded",async()=>{
+ const v17First=!localStorage.getItem("rdr_v17_counter_initialized");
+ if(v17First){
+  localStorage.setItem("rdr_auftrag_counter","0");
+  localStorage.setItem("rdr_v17_counter_initialized","ja");
+  localStorage.removeItem("app_v17_state");
+ }
+ if(!localStorage.getItem("app_v17_compliance")){
+  document.getElementById("datenschutz_modal").style.display="flex";
+ }
+ const cache=v17First?null:(localStorage.getItem("app_v17_state") || localStorage.getItem("app_v14_state"));
+ if(cache){
+  try{appState=JSON.parse(cache)}catch(e){appState=defaultState()}
+  if(!/^RDR-2026-\d{6}$/.test(appState.auftrag||"")){
+   generateFreshAuftrag();
+  }else{
+   const existingNr=parseInt(appState.auftrag.slice(-6),10)||0;
+   const storedNr=parseInt(localStorage.getItem("rdr_auftrag_counter")||"0",10)||0;
+   if(existingNr>storedNr)localStorage.setItem("rdr_auftrag_counter",String(existingNr));
+  }
+  appState.leistungen=Object.assign({anfahrtAktiv:false,km:0,anfahrtPreis:0,putzmittel:false,materialPreis:0,zusatzReinigung:false,zusatzReinigungPreis:85,wohnflaecheAktiv:false,wohnflaeche:0,mehrflaeche:0,wohnflaechePreis:0},appState.leistungen||{});
+ if(!appState.unterschriftDatum) appState.unterschriftDatum="";
+ }else{
+  generateFreshAuftrag();
+ }
+ normalizeV17State();
+ await hydratePhotoStore();
+ syncTopbar();
+ renderPage();
+});
+
+function generateFreshAuftrag(){
+ const year=2026;
+ let counter=parseInt(localStorage.getItem("rdr_auftrag_counter")||"0",10);
+ if(!Number.isFinite(counter)||counter<0) counter=0;
+ counter+=1;
+ localStorage.setItem("rdr_auftrag_counter",String(counter));
+ appState.auftrag=`RDR-${year}-${String(counter).padStart(6,"0")}`;
+}
+
+function triggerNewAuftrag(){
+ if(!confirm("Möchten Sie diesen Auftrag beenden und einen NEUEN leeren Auftrag starten?"))return;
+ appState=defaultState();
+ generateFreshAuftrag();
+ activeRoomIdx=0;activeKachelIdx=0;activeZaehlerIdx=0;currentPage=1;
+ localStorage.setItem("app_fotos","0");
+ saveState();
+ renderPage();
+}
+
+function acceptPrivacy(){
+ if(!document.getElementById("chk_agb").checked || !document.getElementById("chk_dsgvo").checked){
+  alert("Bitte stimmen Sie beiden Bedingungen zu.");
+  return;
+ }
+ localStorage.setItem("app_v17_compliance","ja");
+ document.getElementById("datenschutz_modal").style.display="none";
+}
+
+function saveState(){
+ const json=JSON.stringify(appState,(key,value)=>{
+  if(key==="data"&&typeof value==="string"&&value.startsWith("data:image/"))return "";
+  if(key==="foto"&&typeof value==="string"&&value.startsWith("data:image/"))return "";
+  return value;
+ });
+ localStorage.setItem("app_v17_state",json);
+ syncTopbar();
+}
+
+function normalizeV17State(){
+ appState.paketKombi=false;
+ appState.paketKategorie=appState.paketKategorie||"EINZEL";
+ if(!appState.vorabnahme||!Array.isArray(appState.vorabnahme.todos)){
+  appState.vorabnahme={todos:[
+   {id:"todo_1",text:"Mängel / Restarbeiten prüfen",done:false},
+   {id:"todo_2",text:"Wände / Decken prüfen",done:false},
+   {id:"todo_3",text:"Böden / Türen / Fenster prüfen",done:false},
+   {id:"todo_4",text:"Zählerstände erfassen",done:false},
+   {id:"todo_5",text:"Fotodokumentation vollständig",done:false}
+  ]};
+ }
+ appState.leistungen=Object.assign({anfahrtAktiv:false,km:0,anfahrtPreis:0,putzmittel:false,materialPreis:0,zusatzReinigung:false,zusatzReinigungPreis:85,wohnflaecheAktiv:false,wohnflaeche:0,mehrflaeche:0,wohnflaechePreis:0},appState.leistungen||{});
+ if(!appState.unterschriftDatum) appState.unterschriftDatum="";
+}
+
+function syncTopbar(){
+ document.getElementById("top_auftrag").textContent=appState.auftrag||"-";
+ document.getElementById("top_paket").textContent=appState.paket||"Wählen";
+ const fertig=appState.raeume.filter(r=>r.status==="fertig").length;
+ document.getElementById("top_raeume").textContent=(`${appState.raeume.length} ausgewählt · ${fertig} fertig`);
+ document.getElementById("top_fotos").textContent=localStorage.getItem("app_fotos")||"0";
+}
+
+function changePage(direction){
+ currentPage=Math.max(1,Math.min(10,currentPage+direction));
+ renderPage();
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function jumpToPage(target){
+ currentPage=target;
+ renderPage();
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function updateStepBar(){
+ document.querySelectorAll(".step").forEach(s=>{
+  s.classList.toggle("active",Number(s.dataset.page)===currentPage);
+ });
+ document.getElementById("page_number").textContent=String(currentPage).padStart(2,"0");
+ document.getElementById("next_btn").textContent=currentPage===10?"PDF Protokoll":"Weiter →";
+ document.getElementById("next_btn").onclick=currentPage===10?generateReportPDF:()=>changePage(1);
+}
+
+function renderPage(){
+ normalizeV17State();
+ updateStepBar();
+ const pLeft=document.getElementById("pane_left");
+ const pMiddle=document.getElementById("pane_middle");
+ pLeft.innerHTML='<div style="font-size:11px;color:var(--text2);text-align:center;padding-top:20px">Kein Seiten-Menü nötig.</div>';
+
+ switch(currentPage){
+  case 1:
+   pageTitle("LEISTUNGS-PAKET AUSWÄHLEN");
+   pMiddle.innerHTML=`<div class="card"><div class="card-title">📦 WOHNUNGSÜBERGABE – SMART & PREMIUM</div><div class="paket-grid-v15">${packageCard("SMART","1–2 Zimmer","249,00 €","Wohnungsübergabe · Fotos · KI · Zähler · PDF","smart_1_2",249,false)}${packageCard("SMART","3 Zimmer ⭐","299,00 €","Wohnungsübergabe · Fotos · KI · Zähler · PDF","smart_3",299,false)}${packageCard("SMART","4 Zimmer","399,00 €","Wohnungsübergabe · Fotos · KI · Zähler · PDF","smart_4",399,false)}${packageCard("SMART","5 Zimmer","479,00 €","Wohnungsübergabe · Fotos · KI · Zähler · PDF","smart_5",479,false)}${packageCard("PREMIUM","1–2 Zimmer","299,00 €","SMART-Leistung + Endreinigung","premium_1_2",299,false)}${packageCard("PREMIUM","3 Zimmer ⭐","399,00 €","SMART-Leistung + Endreinigung","premium_3",399,false)}${packageCard("PREMIUM","4 Zimmer","519,00 €","SMART-Leistung + Endreinigung","premium_4",519,false)}${packageCard("PREMIUM","5 Zimmer","599,00 €","SMART-Leistung + Endreinigung","premium_5",599,false)}</div><div class="paket-section-title">🔎 VORABNAHME – EIGENSTÄNDIGES PAKET</div><div class="notice"><b>Eigener Auftrag, eigene Rechnung, eigenes Vorabnahme-Protokoll.</b><br>Vorabnahme mit To-do-Liste, Mängeln, Fotos, KI, Zählerständen und PDF.</div><div class="paket-grid-v15" style="margin-top:12px">${packageCard("VORABNAHME","1–2 Zimmer","149,00 €","Vorabnahme-Protokoll · To-do-Liste · Fotos · KI · Zähler","vorabnahme_1_2",149,false,true)}${packageCard("VORABNAHME","3 Zimmer","199,00 €","Vorabnahme-Protokoll · To-do-Liste · Fotos · KI · Zähler","vorabnahme_3",199,false,true)}${packageCard("VORABNAHME","4 Zimmer","249,00 €","Vorabnahme-Protokoll · To-do-Liste · Fotos · KI · Zähler","vorabnahme_4",249,false,true)}${packageCard("VORABNAHME","5 Zimmer","299,00 €","Vorabnahme-Protokoll · To-do-Liste · Fotos · KI · Zähler","vorabnahme_5",299,false,true)}</div><div class="paket-section-title">🔍 LEERSTANDSKONTROLLE</div><div class="notice"><b>Eigenständiger Kontrollauftrag.</b><br>Raumkontrolle · Fotos · KI · Zählerstände · Auffälligkeiten · PDF-Bericht.</div><div class="paket-grid-v15" style="margin-top:12px">${packageCard("LEERSTAND","1–2 Zimmer","99,00 €","Kontrolle · Fotos · KI · Zähler · PDF","leerstand_1_2",99,false,true)}${packageCard("LEERSTAND","3 Zimmer","129,00 €","Kontrolle · Fotos · KI · Zähler · PDF","leerstand_3",129,false,true)}${packageCard("LEERSTAND","4 Zimmer","159,00 €","Kontrolle · Fotos · KI · Zähler · PDF","leerstand_4",159,false,true)}${packageCard("LEERSTAND","5 Zimmer","189,00 €","Kontrolle · Fotos · KI · Zähler · PDF","leerstand_5",189,false,true)}</div>${appState.paket?`<div class="workflow-status-v15"><div class="workflow-box-v15"><b>📋 Aktueller Auftrag</b><span class="status ok">✓ ${esc(appState.paket)} · ${esc(appState.paketZimmer||"")}</span></div><div class="workflow-box-v15"><b>🧾 Rechnung</b><span class="status ok">✓ Nach Abschluss erstellbar</span></div></div>`:""}</div>`;
+   break;
+
+  case 2:
+   pageTitle("STAMMDATEN: DOKUMENTATIONS-OBJEKT");
+   pMiddle.innerHTML=`
+    <div class="card"><div class="card-title">📍 Objektadresse / Leistungsort</div>
+     <div class="form-grid">
+      ${textField("Straße","obj_str","appState.objekt.strasse","updateObjekt('strasse',this.value)")}
+      ${textField("Hausnummer","obj_hnr","appState.objekt.hausnummer","updateObjekt('hausnummer',this.value)")}
+      ${textField("PLZ","obj_plz","appState.objekt.plz","updateObjekt('plz',this.value)")}      ${textField("Ort","obj_ort","appState.objekt.ort","updateObjekt('ort',this.value)")}
+      ${textField("Etage / Lage","obj_etage","appState.objekt.etage","updateObjekt('etage',this.value)")}
+     </div>
+     <div class="notice" style="margin-top:12px"><b>Etage / Lage:</b> z. B. EG, 1. OG, 2. OG, DG, Keller, Souterrain</div>
+     <div class="card-title" style="margin-top:20px">Umfang</div>
+     <div class="form-group" style="max-width:180px">
+      <label>Anzahl Räume</label>
+      <input type="number" min="1" max="100" class="input" value="${appState.objekt.raumAnzahl}" oninput="updateObjekt('raumAnzahl',this.value)">
+     </div>
+    </div>`;
+   break;
+
+  case 3:
+   pageTitle("STAMMDATEN: AUFTRAGGEBER");
+   pMiddle.innerHTML=`
+    <div class="card"><div class="card-title">👤 Kontaktdaten des Auftraggebers</div>
+     <div class="form-grid">
+      ${textField("Firma / Organisation","kunde_firma","appState.kunde.firma","updateKunde('firma',this.value)")}
+      ${textField("Name des Vertreters *","kunde_name","appState.kunde.name","updateKunde('name',this.value)")}
+      ${textField("E-Mail","kunde_email","appState.kunde.email","updateKunde('email',this.value)")}
+      ${textField("Telefon","kunde_tel","appState.kunde.telefon","updateKunde('telefon',this.value)")}
+     </div>
+    </div>`;
+   break;
+
+  case 4:
+   pageTitle("ZUSATZPOSTEN BERECHNUNG");
+   const paketQM = getPaketInklusiveQM();
+   const mehrQM = Number(appState.leistungen.mehrflaeche)||0;
+   const qmPreis = mehrQM * 2.50;
+   pMiddle.innerHTML=`
+    <div class="card">
+     <div class="card-title">🚗 Kilometergeld</div>
+     <div class="row"><label class="check"><input type="checkbox" ${appState.leistungen.anfahrtAktiv?"checked":""} onchange="toggleAnfahrt(this.checked)"> Fahrtstrecke über 25 km anrechnen</label><b>0,80 € / km</b></div>
+     <div class="row" style="display:${appState.leistungen.anfahrtAktiv?"flex":"none"}">
+      <label>Gefahrene KM:</label><input type="number" min="0" step="1" class="input" style="width:100px" value="${appState.leistungen.km}" oninput="calcKm(this.value)">
+     </div>
+
+     <div class="card-title" style="margin-top:20px">🏠 WOHNFLÄCHE</div>
+     <div class="row"><label class="check"><input type="checkbox" ${appState.leistungen.wohnflaecheAktiv?"checked":""} onchange="toggleWohnflaeche(this.checked)"> Mehrfläche über Paketgrenze berechnen</label><b>2,50 € / m²</b></div>
+     <div class="notice" style="margin-top:10px">
+      <b>${paketQM} m² Wohnfläche inklusive</b><br>
+      ${paketQM===50?"1–2 Zimmer":paketQM===70?"3 Zimmer":paketQM===100?"4 Zimmer":"5 Zimmer"} · Nur die darüber liegende Fläche wird zusätzlich berechnet.
+     </div>
+     <div class="row" style="display:${appState.leistungen.wohnflaecheAktiv?"flex":"none"};align-items:center">
+      <label>Wohnfläche gesamt:</label><input id="wohnflaeche_input" type="number" min="0" step="0.1" class="input" style="width:110px" value="${appState.leistungen.wohnflaeche||""}" oninput="calcWohnflaeche(this.value)"> <span>m²</span>
+     </div>
+     <div class="row" style="display:${appState.leistungen.wohnflaecheAktiv?"flex":"none"}">
+      <span>Mehrfläche:</span><b>${mehrQM.toFixed(1)} m²</b><b style="margin-left:auto">${qmPreis.toFixed(2)} €</b>
+     </div>
+
+     <div class="card-title" style="margin-top:20px">🧼 Putzmittel</div>
+     <div class="row"><label class="check"><input type="checkbox" ${appState.leistungen.putzmittel?"checked":""} onchange="togglePutzmittel(this.checked)"> Professionelles Putzmittel-Kit</label><b>10,00 €</b></div>
+     <div class="card-title" style="margin-top:20px">🧹 Zusatz-Reinigung</div>
+     <div class="row"><label class="check"><input type="checkbox" ${appState.leistungen.zusatzReinigung?"checked":""} onchange="toggleZusatzReinigung(this.checked)"> Zusatz-Reinigung bei Wohnungsübergabe</label><b>85,00 €</b></div>
+     <div class="notice" style="margin-top:12px">Nur als optionale Zusatzposten. Mehrfläche wird nur berechnet, wenn die Wohnfläche über der im Paket enthaltenen Grenze liegt.</div>
+    </div>`;
+   break;
+
+  case 5:
+   pageTitle("DOKUMENTATIONS-WORKFLOW");
+   pMiddle.innerHTML=`<div class="card"><div class="paket-box ${appState.arbeitsmodus==="Wohnungsübergabe"?"active":""}" onclick="setModus('Wohnungsübergabe')"><h3>🏠 Wohnungsübergabe-Workflow</h3><p class="sub">Normale Wohnungsübergabe mit SMART oder PREMIUM.</p></div><div class="paket-box ${appState.arbeitsmodus==="Vorabnahme"?"active":""}" onclick="setModus('Vorabnahme')"><h3>🔎 Vorabnahme-Workflow</h3><p class="sub">Eigenständige Vorabnahme mit Mängeln, To-dos, Fotos und Zählerständen.</p></div><div class="paket-box ${appState.arbeitsmodus==="Leerstandskontrolle"?"active":""}" onclick="setModus('Leerstandskontrolle')"><h3>🔍 Leerstandskontrolle</h3></div>${appState.arbeitsmodus==="Vorabnahme"?renderTodoList():""}</div>`;
+   break;
+
+  case 6:
+   pageTitle("DOKUMENTATIONS-HUB");
+   pMiddle.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+     <div class="card" onclick="jumpToPage(7)" style="cursor:pointer;text-align:center;padding:35px"><div style="font-size:45px">🏠</div><h3>Raumdokumentation</h3><p class="sub">Räume, Fotos, Zustände und Mängel</p></div>
+     <div class="card" onclick="jumpToPage(8)" style="cursor:pointer;text-align:center;padding:35px"><div style="font-size:45px">⚡</div><h3>Zählererfassung</h3><p class="sub">Zähler fotografieren, ablesen und verifizieren</p></div>
+    </div>`;
+   break;
+
+  case 7:
+   pageTitle("RAUMDOKUMENTATION – 07");
+   renderRaumDetailScreen(pLeft,pMiddle);
+   break;
+
+  case 8:
+   pageTitle("ZÄHLERSTANDS-SCANNER PRO");
+   renderZaehlerScreen(pLeft,pMiddle);
+   break;
+
+  case 9:
+   pageTitle("PRÜF- UND KONTROLLVORSCHAU");
+   renderReviewScreen(pMiddle);
+   break;
+
+  case 10:
+   pageTitle("DIGITALSIGNATUR & REPORTSCHLUSS");
+   renderSignaturScreen(pMiddle);
+   break;
+ }
+ renderLiveSpalte();
+ saveState();
+}
+
+function pageTitle(t){document.getElementById("page_title_text").textContent=t}
+
+function textField(label,id,value,oninput){
+ return `<div class="form-group"><label>${label}</label><input id="${id}" class="input" type="text" value="${esc(value)}" oninput="${oninput}"></div>`;
+}
+
+function esc(v){
+ return String(v??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function paketFlaecheText(zimmer){
+ const z=String(zimmer||"");
+ if(z.includes("1–2")) return "inkl. bis 50 m²";
+ if(z.includes("3 Zimmer")) return "inkl. bis 70 m²";
+ if(z.includes("4 Zimmer")) return "inkl. bis 100 m²";
+ if(z.includes("5 Zimmer")) return "inkl. bis 115 m²";
+ return "";
+}
+function packageCard(name,zimmer,price,desc,id,priceValue,combo=false,vorabnahme=false){
+ const active=appState.paketId===id;
+ const fl=paketFlaecheText(zimmer);
+ return `<div class="paket-card-v15 ${vorabnahme?"vorabnahme":""} ${active?"active":""}" onclick="selectPaketV17('${id}','${name}','${zimmer}',${priceValue},${vorabnahme})">
+ <span class="paket-badge-v15">${id.startsWith("leerstand_")?"LEERSTAND":vorabnahme?"VORABNAHME":"EINZELPAKET"}</span>
+ <h3 style="margin-top:9px">${name}</h3>
+ <div style="font-size:11px;color:var(--text2);margin-top:3px">${zimmer}</div>
+ <div class="paket-price-v15">${price}</div>
+ <div style="font-size:12px;color:var(--gold);margin-top:5px;font-weight:700">${fl}</div>
+ <div class="paket-desc-v15">${desc}</div>
+ </div>`;
+}
+function selectPaketV17(id,name,zimmer,price,vorabnahme){appState.paketId=id;appState.paket=name;appState.preis=price;appState.paketZimmer=zimmer;appState.paketKombi=false;appState.rechnungErstellt=false;appState.rechnungsstatus="offen";if(id.startsWith("vorabnahme_")){appState.paketKategorie="VORABNAHME";appState.arbeitsmodus="Vorabnahme";appState.vorabnahmeStatus="offen";}else if(id.startsWith("leerstand_")){appState.paketKategorie="LEERSTAND";appState.arbeitsmodus="Leerstandskontrolle";appState.vorabnahmeStatus="nicht_geplant";}else{appState.paketKategorie="EINZEL";appState.arbeitsmodus="Wohnungsübergabe";appState.vorabnahmeStatus="nicht_geplant";}saveState();renderPage();}
+function selectPaket(p,pr){selectPaketV17(p,p,"",pr,false)}
+
+function updateObjekt(f,v){
+ if(f==="raumAnzahl"){
+  const n=Math.max(1,parseInt(v)||1);
+  appState.objekt.raumAnzahl=n;
+  if(appState.raeume.length>n)appState.raeume=appState.raeume.slice(0,n);
+ }else appState.objekt[f]=v;
+ saveState();
+}
+function updateKunde(f,v){appState.kunde[f]=v;saveState()}
+function toggleAnfahrt(v){appState.leistungen.anfahrtAktiv=v;if(!v)appState.leistungen.km=0;appState.leistungen.anfahrtPreis=appState.leistungen.km*.8;renderPage()}
+function calcKm(v){appState.leistungen.km=parseFloat(v)||0;appState.leistungen.anfahrtPreis=appState.leistungen.km*.8;saveState();renderLiveSpalte()}function getPaketInklusiveQM(){
+ const z=String(appState.paketZimmer||"");
+ if(z.includes("1–2")) return 50;
+ if(z.includes("3 Zimmer")) return 70;
+ if(z.includes("4 Zimmer")) return 100;
+ if(z.includes("5 Zimmer")) return 115;
+ return 50;
+}
+function toggleWohnflaeche(v){
+ appState.leistungen.wohnflaecheAktiv=v;
+ if(!v){
+   appState.leistungen.wohnflaeche=0;
+   appState.leistungen.mehrflaeche=0;
+   appState.leistungen.wohnflaechePreis=0;
+ }else{
+   calcWohnflaeche(appState.leistungen.wohnflaeche||0);
+ }
+ saveState(); renderPage();
+}
+function calcWohnflaeche(v){
+ const qm=parseFloat(v)||0;
+ const inkl=getPaketInklusiveQM();
+ const mehr=Math.max(0,qm-inkl);
+ appState.leistungen.wohnflaeche=qm;
+ appState.leistungen.mehrflaeche=mehr;
+ appState.leistungen.wohnflaechePreis=mehr*2.50;
+ saveState(); renderLiveSpalte();
+ const info=document.getElementById("wohnflaeche_info");
+ if(info) info.textContent=mehr>0 ? ("Mehrfläche: "+mehr.toFixed(1)+" m² · Zuschlag: "+(mehr*2.50).toFixed(2)+" €") : ("Keine Mehrfläche · "+inkl+" m² inklusive");
+}
+function togglePutzmittel(v){appState.leistungen.putzmittel=v;appState.leistungen.materialPreis=v?10:0;renderPage()}
+function toggleZusatzReinigung(v){appState.leistungen.zusatzReinigung=v;appState.leistungen.zusatzReinigungPreis=85;renderPage()}
+function setModus(m){appState.arbeitsmodus=m;renderPage()}
+
+function renderTodoList(){
+ if(!appState.vorabnahme)appState.vorabnahme={todos:[]};
+ if(!Array.isArray(appState.vorabnahme.todos))appState.vorabnahme.todos=[];
+ const pruefhilfe=`<div id="pruefhilfe_vorabnahme" class="card" style="display:none;margin-top:10px;background:#061828;border:1px solid #214d78">
+  <div class="paket-section-title" style="margin-top:0">🔎 PRÜFHILFE VORABNAHME</div>
+  <div class="sub" style="line-height:1.55">
+   <b>🧱 Oberflächen:</b> Wände auf Risse oder ungleichmäßigen Anstrich prüfen. Böden auf Kratzer, Dellen oder hohle Fliesen untersuchen.<br><br>
+   <b>🚪 Fenster & Türen:</b> Lassen sie sich leicht öffnen und schließen? Schließen sie luftdicht? Gibt es Kratzer im Glas oder am Rahmen?<br><br>
+   <b>🚿 Sanitäranlagen:</b> Fließt das Wasser im Waschbecken, Dusche und WC sauber ab? Sind alle Armaturen fest und dicht? Funktionieren die Spülungen?<br><br>
+   <b>⚡ Elektrik:</b> Funktionieren alle Lichtschalter und Steckdosen? Sind die Abdeckungen gerade montiert. <b>Tipp:</b> Phasenprüfer oder Handyladekabel zum Testen mitbringen.<br><br>
+   <b>🔥 Heizung & Lüftung:</b> Werden die Heizkörper oder die Fußbodenheizung warm? Laufen eingebaute Lüfter, z. B. im Bad?<br><br>
+   <b>🌳 Außenbereich (falls vorhanden):</b> Balkonbelag, Geländer, Außensteckdosen oder Rollläden prüfen.
+  </div>
+ </div>`;
+ return `<div class="paket-section-title">✅ TO-DO-LISTE VORABNAHME</div>
+ <div class="card" style="background:#061828">
+  <div id="todo_list">${appState.vorabnahme.todos.map((t,i)=>`<label class="todo-item"><input type="checkbox" ${t.done?"checked":""} onchange="toggleTodo(${i},this.checked)"><span class="${t.done?"todo-done":""}">${esc(t.text)}</span></label>`).join("")||`<div class="sub">Noch keine To-dos vorhanden.</div>`}</div>
+  <div class="todo-add"><input id="new_todo" class="input" placeholder="Eigenes To-do hinzufügen..." onkeydown="if(event.key==='Enter')addTodo()"><button class="btn" onclick="addTodo()">＋</button></div>
+  <button class="btn" style="margin-top:10px;width:100%;background:#12385e;color:#fff;border:1px solid #28639a" onclick="togglePruefhilfeVorabnahme()">🔎 Prüfhilfe Vorabnahme anzeigen</button>
+  ${pruefhilfe}
+ </div>`;
+}
+function togglePruefhilfeVorabnahme(){const el=document.getElementById("pruefhilfe_vorabnahme");if(!el)return;const offen=el.style.display!=="none";el.style.display=offen?"none":"block";const btn=el.parentElement.querySelector("button[onclick*='togglePruefhilfeVorabnahme']");if(btn)btn.textContent=offen?"🔎 Prüfhilfe Vorabnahme anzeigen":"🔎 Prüfhilfe Vorabnahme ausblenden";}
+
+function toggleTodo(i,v){if(appState.vorabnahme&&appState.vorabnahme.todos[i])appState.vorabnahme.todos[i].done=v;saveState();renderPage()}
+function addTodo(){const el=document.getElementById("new_todo");if(!el||!el.value.trim())return;if(!appState.vorabnahme)appState.vorabnahme={todos:[]};appState.vorabnahme.todos.push({id:"todo_"+Date.now(),text:el.value.trim(),done:false});saveState();renderPage()}
+
+function ensureRooms(){
+ const count=Math.max(1,parseInt(appState.objekt.raumAnzahl)||1);
+ while(appState.raeume.length<count){
+  const i=appState.raeume.length+1;
+  appState.raeume.push({
+   id:Date.now()+i,name:"Raum "+i,etage:(appState.objekt.etage||"EG"),status:"offen",
+   formZustand:"",formKommentar:"",formChecklist:[],
+   formKachelDaten:JSON.parse(JSON.stringify(fotoKachelnTemplate))
+  });
+ }
+}
+
+function renderRaumDetailScreen(pLeft,pMiddle){
+ ensureRooms();
+ if(activeRoomIdx>=appState.raeume.length)activeRoomIdx=appState.raeume.length-1;
+ const r=appState.raeume[activeRoomIdx];
+ const k=r.formKachelDaten[activeKachelIdx];
+
+ let left=`<div class="section-title">AUSWAHL BEREICH</div>`;
+ appState.raeume.forEach((room,i)=>{
+  left+=`<div class="room-nav-tile ${i===activeRoomIdx?"active":""} ${room.status==="fertig"?"checked":""}" onclick="activeRoomIdx=${i};activeKachelIdx=0;renderPage()">
+   <b>🏠 ${esc(room.name)}</b><div class="sub">${room.status==="fertig"?"✓ Fertig":"○ Offen"}</div>
+  </div>`;
+ });
+ left+=`<button class="btn-add-z" onclick="renameRoom()">✏️ Raumname ändern</button>`;
+ left+=`<button class="btn-add-z" style="margin-top:8px" onclick="addAdditionalRoom()">➕ Raum / Bereich hinzufügen</button>`;
+ pLeft.innerHTML=left;
+
+ pMiddle.innerHTML=`
+ <div class="card">
+  <div class="section-title">FOKUSSIERT: ${esc(r.name)} – ${esc(k.label)}</div>
+  <input type="file" id="room_file" accept="image/*" capture="environment" style="display:none" onchange="captureRoomPhoto(this)">
+  <div class="main-photo" onclick="document.getElementById('room_file').click()">
+   ${k.data?`<img src="${k.data}" alt="${esc(k.label)}">`:`📸 ${esc(k.label)} fotografieren`}
+  </div>
+  ${k.data?`<button class="btn danger" style="width:100%;margin-top:8px" onclick="deleteCurrentRoomPhoto();event.stopPropagation();">🗑️ Foto löschen</button>`:""}
+  <div id="room_ki_panel">${k.data?renderRoomKiPanel(r,k):""}</div>
+  <div class="thumb-list" style="margin-top:10px">
+   ${r.formKachelDaten.map((x,i)=>`
+    <div class="thumb-tile ${i===activeKachelIdx?"active":""} ${x.data?"has-image":""}" onclick="activeKachelIdx=${i};renderPage()">
+     ${x.data?`<img src="${x.data}">`:`<span style="font-size:20px">${x.icon}</span>`}
+     <span class="badge">${x.data?"✓ "+x.label:"📷 "+x.label}</span>
+    </div>`).join("")}
+  </div>
+ </div>
+
+ <div class="card">
+  <div class="card-title">📍 BEREICH / LAGE</div>
+  <div class="form-group">
+   <label>Etage / Lage für diesen Bereich</label>
+   <input id="r_etage" class="input" value="${esc(r.etage||appState.objekt.etage||"EG")}" placeholder="z. B. EG, 1. OG, DG, Keller" oninput="saveRoomData()">
+  </div>
+  <div class="card-title" style="margin-top:18px">Zustandsbewertung</div>
+  <select id="r_zustand_sel" class="input" onchange="saveRoomData()">
+   <option value="">-- Zustand --</option>
+   <option value="Sehr gut" ${r.formZustand==="Sehr gut"?"selected":""}>✨ Sehr gut</option>
+   <option value="Gut" ${r.formZustand==="Gut"?"selected":""}>👍 Gut</option>
+   <option value="Mangelhaft" ${r.formZustand==="Mangelhaft"?"selected":""}>⚠️ Mangelhaft</option>
+  </select>
+  <div class="card-title" style="margin-top:18px">Ausstattungs-Checkliste</div>
+  <div class="checklist">
+   ${["Fenster","Tür","Steckdosen","Heizkörper"].map(x=>`<label><input class="chk-item" type="checkbox" value="${x}" ${r.formChecklist.includes(x)?"checked":""} onchange="saveRoomData()"> ${x} geprüft</label>`).join("")}
+  </div>
+  <div class="form-group" style="margin-top:15px">
+   <label>Bemerkungen / Mängel</label>
+   <textarea id="r_comment_area" class="input" rows="5" placeholder="Mangel, Besonderheit oder Bemerkung...">${esc(r.formKommentar)}</textarea>
+   <div class="v184-bemerkungs-wrap"><button type="button" class="v184-toggle" onclick="v184ToggleVorschlaege()">💬 Mögliche Anmerkungen</button><div id="v184_bemerkungs_vorschlaege" class="v184-suggestions"></div></div>
+  </div>
+  <button class="btn-accept" onclick="finishRoom()">✓ Raum als erledigt markieren</button>
+ </div>`;
+}
+
+function renameRoom(){
+ const r=appState.raeume[activeRoomIdx];
+ const n=prompt("Neuer Raumname:",r.name);
+ if(n&&n.trim()){r.name=n.trim();saveState();renderPage()}
+}
+
+function addAdditionalRoom(){
+ const options=["Küche","Bad","Flur","Abstellraum","Balkon","Terrasse","Keller","Garage","Außenbereich","Kinderzimmer"];
+ const choice=prompt("Zusätzlichen Bereich hinzufügen.\n\n"+options.map((x,i)=>(i+1)+" = "+x).join("\n")+"\n\nOder direkt einen eigenen Namen eingeben:","");
+ if(!choice)return;
+ let name=choice.trim();
+ const n=parseInt(name,10);
+ if(Number.isInteger(n)&&n>=1&&n<=options.length) name=options[n-1];
+ if(!name)return;
+ const exists=appState.raeume.some(r=>r.name.toLowerCase()===name.toLowerCase());
+ if(exists){alert("Dieser Bereich ist bereits vorhanden.");return;}
+ appState.raeume.push({
+  id:Date.now()+Math.random(),name:name,etage:(appState.objekt.etage||"EG"),status:"offen",
+  formZustand:"",formKommentar:"",formChecklist:[],
+  formKachelDaten:JSON.parse(JSON.stringify(fotoKachelnTemplate)),
+  zusaetzlicherBereich:true
+ });
+ activeRoomIdx=appState.raeume.length-1;
+ activeKachelIdx=0;
+ saveState();renderPage();
+}
+
+
+/* ===== V18.4 KI HANDY TEST =====
+   Die App enthält absichtlich KEINEN OpenAI-Schlüssel.
+   Im Test läuft die KI über den lokalen KI-Testserver auf dem PC.
+*/
+const KI_API_BASE_KEY="respectury_ki_api_base";
+function getKiApiBase(){
+  const saved=(localStorage.getItem(KI_API_BASE_KEY)||"").trim();
+  if(saved)return saved.replace(/\/$/,"");
+  if(location.protocol==="http:"||location.protocol==="https:") return location.origin;
+  return "";
+}
+function setKiApiBase(){
+  const current=getKiApiBase();
+  const url=prompt("KI-Testserver-Adresse eingeben, z. B. http://192.168.178.50:8787",current||"http://192.168.178.50:8787");
+  if(url===null)return false;
+  const clean=url.trim().replace(/\/$/,"");
+  if(!/^https?:\/\//i.test(clean)){alert("Bitte eine Adresse wie http://192.168.178.50:8787 eingeben.");return false;}
+  localStorage.setItem(KI_API_BASE_KEY,clean);return true;
+}
+async function callKi(path,payload){
+  let base=getKiApiBase();
+  if(!base){ if(!setKiApiBase()) throw new Error("KI-Testserver-Adresse fehlt."); base=getKiApiBase(); }
+  let res;
+  try{res=await fetch(base+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});}catch(e){throw new Error("KI-Testserver nicht erreichbar. Prüfe WLAN und ob der Server läuft.");}
+  let data={};try{data=await res.json();}catch(e){}
+  if(!res.ok)throw new Error(data.error||("KI-Server Fehler HTTP "+res.status));
+  return data;
+}
+function renderRoomKiPanel(r,k){
+  const a=k.kiAnalysis||null;
+  return `<div class="ki-panel"><div class="ki-title">🤖 ECHTE KI-FOTOANALYSE</div>${a?`<div class="ki-result"><span class="ki-badge">✓ KI-ERGEBNIS</span><br><b>Beobachtung:</b> ${esc(a.summary||"Keine Zusammenfassung")}${a.findings&&a.findings.length?`<br><b>Auffälligkeiten:</b><br>${a.findings.map(x=>"• "+esc(x)).join("<br>")}`:""}${a.recommendation?`<br><b>Empfehlung:</b> ${esc(a.recommendation)}`:""}</div><div class="ki-actions"><button class="btn ghost" onclick="clearRoomKiAnalysis()">KI-Ergebnis löschen</button></div>`:`<div class="ki-result">Foto ist gespeichert. Die KI prüft nur sichtbare Merkmale und ersetzt nicht deine fachliche Prüfung.</div><div class="ki-actions"><button class="btn" onclick="analyzeCurrentRoomPhoto()">🤖 Foto mit KI analysieren</button><button class="btn ghost" onclick="setKiApiBase()">⚙️ KI-Verbindung</button></div>`}</div>`;
+}
+async function analyzeCurrentRoomPhoto(){
+  const r=appState.raeume[activeRoomIdx],k=r.formKachelDaten[activeKachelIdx];
+  if(!k||!k.data){alert("Bitte zuerst ein Raumfoto aufnehmen.");return;}
+  const panel=()=>document.getElementById("room_ki_panel");
+  const el=panel(); if(el)el.innerHTML='<div class="ki-panel"><div class="ki-title">🤖 ECHTE KI-FOTOANALYSE</div><div class="ki-result"><span class="ki-spinner"></span>Foto wird analysiert …</div></div>';
+  try{
+    const result=await callKi("/api/room-analyze",{image:k.data,room:r.name,area:k.label});
+    k.kiAnalysis=result.analysis||result; k.kiProvider="openai"; k.kiAnalyzedAt=new Date().toISOString();
+    if(k.kiAnalysis.summary && /auffällig|mangel|schaden|riss|kratzer|delle|beschäd/i.test(k.kiAnalysis.summary+" "+(k.kiAnalysis.findings||[]).join(" "))){
+      r.formKommentar=(r.formKommentar? r.formKommentar+"\n":"")+"[KI-Vorschlag "+k.label+"]: "+k.kiAnalysis.summary;
+    }
+    saveState();renderPage();
+  }catch(e){alert("KI-Analyse fehlgeschlagen: "+e.message);renderPage();}
+}
+function clearRoomKiAnalysis(){
+  const r=appState.raeume[activeRoomIdx],k=r.formKachelDaten[activeKachelIdx];if(k){k.kiAnalysis=null;k.kiProvider="";saveState();renderPage();}
+}
+async function analyzeCurrentMeterPhoto(){
+  const z=appState.zaehler[activeZaehlerIdx];
+  if(!z||!z.foto){alert("Bitte zuerst ein Zählerfoto aufnehmen.");return;}
+  const btn=document.getElementById("ki_meter_btn");if(btn){btn.disabled=true;btn.innerHTML='<span class="ki-spinner"></span> KI liest Zähler …';}
+  try{
+    const result=await callKi("/api/meter-analyze",{image:z.foto,meterType:getMeterTypeLabel(z),unit:z.einheit||"",name:getMeterNameLabel(z)||""});
+    const a=result.analysis||result;
+    z.kiWert=a.reading!==undefined&&a.reading!==null?String(a.reading):"";
+    z.hersteller=a.manufacturer||"-";z.modell=a.model||"-";z.konfidenz=a.confidence||"-";
+    z.kiAnalysis=a; z.kiProvider="openai"; z.kiAnalyzedAt=new Date().toISOString();
+    if(z.kiWert&&!z.wert)z.wert=z.kiWert;
+    saveState();renderPage();
+  }catch(e){alert("KI-Zähleranalyse fehlgeschlagen: "+e.message);renderPage();}
+}
+
+function captureRoomPhoto(input){
+ if(!input.files||!input.files.length)return;
+ const file=input.files[0];
+ const reader=new FileReader();
+ reader.onload=e=>{
+  const img=new Image();
+  img.onload=()=>{
+   const max=1024;
+   const scale=Math.min(1,max/Math.max(img.width,img.height));
+   const w=Math.max(1,Math.round(img.width*scale));
+   const h=Math.max(1,Math.round(img.height*scale));
+   const cv=document.createElement("canvas");
+   cv.width=w;cv.height=h;
+   const cx=cv.getContext("2d");
+   cx.drawImage(img,0,0,w,h);
+   const compressed=cv.toDataURL("image/jpeg",0.72);
+   const r=appState.raeume[activeRoomIdx];
+   const k=r.formKachelDaten[activeKachelIdx];
+   const ref=photoRefForRoom(r,k);
+   k.photoRef=ref;
+   k.data=compressed;
+   putPhoto(ref,compressed).then(()=>{saveState();renderPage()}).catch(err=>{console.error(err);alert("Foto konnte nicht lokal gespeichert werden.");});
+  };
+  img.src=e.target.result;
+ };
+ reader.readAsDataURL(file);
+}
+
+function deleteCurrentRoomPhoto(){
+ const r=appState.raeume[activeRoomIdx];
+ const k=r.formKachelDaten[activeKachelIdx];
+ if(!k||!k.data)return;
+ if(!confirm("Dieses Foto wirklich löschen?"))return;
+ const ref=k.photoRef;
+ k.data="";k.photoRef="";
+ deletePhoto(ref).finally(()=>{saveState();renderPage()});
+}
+
+function saveRoomData(){
+ const r=appState.raeume[activeRoomIdx];
+ const sel=document.getElementById("r_zustand_sel");
+ const area=document.getElementById("r_comment_area");
+ const etage=document.getElementById("r_etage");
+ if(sel)r.formZustand=sel.value;
+ if(area)r.formKommentar=area.value;
+ if(etage)r.etage=etage.value.trim()||appState.objekt.etage||"EG";
+ r.formChecklist=[...document.querySelectorAll(".chk-item:checked")].map(x=>x.value);
+ saveState();
+}
+
+function finishRoom(){
+ saveRoomData();
+ const r=appState.raeume[activeRoomIdx];
+ r.status="fertig";
+ saveState();
+ alert("Raum wurde als erledigt gespeichert.");
+ renderPage();
+}
+
+function getMeterTypeLabel(z){
+ const raw=String((z&&z.typ)||"").toLowerCase().replace(/[⚡💧🔧]/g," ").trim();
+ const name=String((z&&z.name)||"").toLowerCase().trim();
+ const all=raw+" "+name;
+ if(all.includes("warmwasser")||all.includes("warm wasser")) return "Warmwasserzähler";
+ if(all.includes("kaltwasser")||all.includes("kalt wasser")) return "Kaltwasserzähler";
+ if(all.includes("wasser")||raw==="wasser") return "Kaltwasserzähler";
+ if(all.includes("gas")) return "Gaszähler";
+ if(all.includes("strom")||all.includes("elekt")||raw==="strom") return "Stromzähler";
+ if(all.includes("heizung")||all.includes("wärme")||all.includes("waerme")) return "Wärmezähler";
+ if(all.includes("fernwärme")||all.includes("fernwaerme")) return "Fernwärmezähler";
+ if(all.includes("solar")||all.includes("photovoltaik")||all.includes("pv")) return "PV-Ertragszähler";
+ return String(z&&z.typ||"Zähler").replace(/[⚡💧🔧]/g,"").trim() || "Zähler";
+}
+
+function getMeterNameLabel(z){
+ const n=String((z&&z.name)||"").trim();
+ const type=getMeterTypeLabel(z);
+ // Verhindert doppelte Bezeichnungen wie "Strom Strom Zähler".
+ if(!n) return "";
+ const clean=n.toLowerCase().replace(/[-_]/g," ").replace(/\s+/g," ").trim();
+ const generic=["strom","stromzähler","strom zaehler","strom zähler","wasser","wasserzähler","wasser zaehler","wasser zähler","kaltwasser","kaltwasserzähler","warmwasser","warmwasserzähler","gas","gaszähler","gas zaehler","gas zähler"];
+ if(generic.includes(clean)) return "";
+ return n;
+}
+
+function renderZaehlerScreen(pLeft,pMiddle){
+ if(activeZaehlerIdx>=appState.zaehler.length)activeZaehlerIdx=0;
+ const z=appState.zaehler[activeZaehlerIdx];
+
+ let left=`<div class="section-title">ZÄHLERMEDIEN</div>`;
+ appState.zaehler.forEach((za,i)=>{
+  left+=`<div class="zaehler-nav-tile ${i===activeZaehlerIdx?"active":""} ${za.status==="ok"?"checked":""}" onclick="activeZaehlerIdx=${i};renderPage()">
+   <b>${esc(getMeterTypeLabel(za))}</b><div class="sub">${esc(getMeterNameLabel(za)||"Bezeichnung")}</div>
+   <span class="status ${za.status==="ok"?"ok":"open"}">${za.status==="ok"?"✓ Verifiziert":"○ Offen"}</span>
+  </div>`;
+ });
+ left+=`<button class="btn-add-z" onclick="openZaehlerDialog()">➕ Zähler hinzufügen</button>`;
+ pLeft.innerHTML=left;
+
+ pMiddle.innerHTML=`
+ <div class="card">
+  <div class="section-title">SCANNER: ${esc(getMeterTypeLabel(z))}${getMeterNameLabel(z)?` – ${esc(getMeterNameLabel(z))}`:""}</div>
+  <input type="file" id="z_file" accept="image/*" capture="environment" style="display:none" onchange="captureZaehlerPhoto(this)">
+  <div class="main-photo" onclick="document.getElementById('z_file').click()">
+   ${z.foto?`<img src="${z.foto}" alt="Zählerfoto">`:`📸 Zähler fotografieren für KI-Ablesung`}
+  </div>
+  <div class="form-grid" style="margin-top:15px">
+   <div class="form-group"><label>Zählernummer</label><input id="z_num" class="input" value="${esc(z.nummer)}" oninput="saveZaehlerData()"></div>
+   <div class="form-group"><label>KI-gelesener Wert</label><input class="input" style="color:var(--green);font-weight:700" value="${z.kiWert||"Warte auf Scan..."}" disabled></div>
+   <div class="form-group"><label>Bestätigter Stand</label><input type="number" step="any" id="z_val" class="input" value="${esc(z.wert)}" oninput="saveZaehlerData()"></div>
+   <div class="form-group"><label>Einheit</label><input class="input" value="${esc(z.einheit)}" disabled></div>
+  </div>
+  ${z.foto?`<div class="ki-panel"><div class="ki-title">🤖 ECHTE KI-ZÄHLERANALYSE</div><div class="ki-result">${z.kiAnalysis?`<span class="ki-badge">✓ KI-ERGEBNIS</span><br><b>Hersteller:</b> ${esc(z.hersteller)} · <b>Modell:</b> ${esc(z.modell)} · <b>Konfidenz:</b> ${esc(z.konfidenz)}<br><small>Der erkannte Wert muss vor der Verifizierung durch dich geprüft werden.</small>`:`Foto gespeichert. Noch keine echte KI-Analyse durchgeführt.`}</div><div class="ki-actions"><button id="ki_meter_btn" class="btn" onclick="analyzeCurrentMeterPhoto()">🤖 Foto mit KI analysieren</button><button class="btn ghost" onclick="setKiApiBase()">⚙️ KI-Verbindung</button></div></div>`:""}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:15px"><button class="btn" onclick="saveZaehlerData();alert('Zählerdaten wurden gespeichert.');">💾 Zählerdaten speichern</button><button class="btn-accept" onclick="verifyZaehler()">✓ Wert verifizieren & speichern</button></div>
+ </div>`;
+}
+
+function compressImage(dataUrl,maxWidth=1280,quality=0.78){
+ return new Promise(resolve=>{
+  const img=new Image();
+  img.onload=()=>{
+   let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+   if(w>maxWidth){h=Math.round(h*maxWidth/w);w=maxWidth;}
+   const c=document.createElement("canvas");c.width=w;c.height=h;
+   c.getContext("2d").drawImage(img,0,0,w,h);
+   resolve(c.toDataURL("image/jpeg",quality));
+  };
+  img.onerror=()=>resolve(dataUrl); img.src=dataUrl;
+ });
+}
+
+function captureZaehlerPhoto(input){
+ if(!input.files||!input.files.length)return;
+ const reader=new FileReader();
+ reader.onload=e=>{
+  const z=appState.zaehler[activeZaehlerIdx];
+  compressImage(e.target.result).then(data=>{
+   z.foto=data; z.photoRef=photoRefForMeter(z); incrementPhotoCount();
+   z.kiWert="";
+   z.kiAnalysis=null;
+   z.hersteller="-";z.modell="-";z.konfidenz="-";
+   putPhoto(z.photoRef,data).then(()=>{saveState();renderPage()}).catch(err=>{console.error(err);alert("Zählerfoto konnte nicht lokal gespeichert werden.");});
+  });
+ };
+ reader.readAsDataURL(input.files[0]);
+}
+function saveZaehlerData(){
+ const z=appState.zaehler[activeZaehlerIdx];
+ const num=document.getElementById("z_num"),val=document.getElementById("z_val");
+ if(num)z.nummer=num.value;
+ if(val)z.wert=val.value;
+ saveState();
+}
+
+function verifyZaehler(){
+ saveZaehlerData();
+ const z=appState.zaehler[activeZaehlerIdx];
+ if(!z.wert){alert("Bitte zuerst einen Zählerstand eingeben oder prüfen.");return}
+ z.status="ok";
+ z.gespeichertAm=new Date().toISOString();
+ saveState();
+ alert("Zählerstand wurde verifiziert und gespeichert.");
+ renderPage();
+}
+
+function openZaehlerDialog(){
+ const n=prompt("Zählertyp / Bezeichnung, z.B. Gaszähler oder Warmwasser Küche:");
+ if(!n||!n.trim())return;
+ const low=n.toLowerCase();
+ let einheit="m³";
+ if(low.includes("strom")||low.includes("elekt"))einheit="kWh";
+ const typeLabel = low.includes("warmwasser") || low.includes("warm wasser") ? "Warmwasserzähler"
+   : low.includes("kaltwasser") || low.includes("kalt wasser") ? "Kaltwasserzähler"
+   : low.includes("wasser") ? "Kaltwasserzähler"
+   : low.includes("gas") ? "Gaszähler"
+   : low.includes("strom") || low.includes("elekt") ? "Stromzähler"
+   : low.includes("fernwärme") || low.includes("fernwaerme") ? "Fernwärmezähler"
+   : low.includes("wärme") || low.includes("waerme") || low.includes("heizung") ? "Wärmezähler"
+   : "Zähler";
+ appState.zaehler.push({
+  id:"cust_"+Date.now(),typ:typeLabel,
+  name:n.trim(),einheit,nummer:"",wert:"",kiWert:"",foto:"",status:"missing",
+  hersteller:"-",modell:"-",konfidenz:"-"
+ });
+ activeZaehlerIdx=appState.zaehler.length-1;
+ saveState();renderPage();
+}
+
+function incrementPhotoCount(){
+ const n=parseInt(localStorage.getItem("app_fotos")||"0")+1;
+ localStorage.setItem("app_fotos",String(n));
+}
+
+function renderReviewScreen(pMiddle){
+ const fertig=appState.raeume.filter(r=>r.status==="fertig").length;
+ const mangel=appState.raeume.filter(r=>r.formZustand==="Mangelhaft"||r.formKommentar.length>2);
+ const roomHtml=appState.raeume.map(r=>{
+  const fotos=(r.formKachelDaten||[]).filter(k=>k.data);
+  return `<div class="notice" style="margin-bottom:10px"><b>🏠 ${esc(r.name)}</b> <span class="status ok" style="margin-left:6px">${esc(r.etage||appState.objekt.etage||"EG")}</span> · ${r.status==="fertig"?"✓ Fertig":"○ Offen"}<br><span style="font-size:11px">Zustand: ${esc(r.formZustand||"Nicht klassifiziert")} · Fotos: ${fotos.length}</span>${r.formKommentar?`<br>${esc(r.formKommentar)}`:""}${fotos.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${fotos.map(k=>`<img src="${k.data}" alt="${esc(k.label)}" style="width:92px;height:68px;object-fit:cover;border-radius:5px;border:1px solid var(--border)">`).join("")}</div>`:""}</div>`;
+ }).join("");
+ const meterHtml=appState.zaehler.map(z=>`<div class="meter-summary"><b>${esc(z.typ)} – ${esc(z.name)}</b><br>Zählernummer: ${esc(z.nummer||"-")}<br><strong>Stand: ${esc(z.wert||"-")} ${esc(z.einheit)}</strong><br><span class="status ${z.status==="ok"?"ok":"open"}">${z.status==="ok"?"✓ VERIFIZIERT":"○ OFFEN"}</span>${z.foto?`<div style="margin-top:8px"><img src="${z.foto}" alt="Zählerfoto" style="width:180px;max-width:100%;height:auto;max-height:130px;object-fit:contain;border-radius:5px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text2);margin-top:3px">📸 Zählerfoto</div></div>`:""}</div>`).join("");
+ const todos=appState.vorabnahme?.todos||[];
+ const todoHtml=appState.arbeitsmodus==="Vorabnahme"?`<div class="card-title" style="margin-top:15px">To-do-Liste Vorabnahme</div>${todos.length?todos.map(t=>`<div class="preview-row"><span class="${t.done?"todo-done":""}">${t.done?"☑":"☐"} ${esc(t.text)}</span></div>`).join(""):`<div class="notice">Keine To-dos angelegt.</div>`}`:"";
+ pMiddle.innerHTML=`<div class="card"><div class="card-title">📋 PRÜFVORSCHAU ${appState.arbeitsmodus==="Vorabnahme"?"VORABNAHME-PROTOKOLL":"REPORT"}</div><div class="preview-row"><b>Auftrag:</b> ${esc(appState.auftrag)}</div><div class="preview-row"><b>Modus:</b> ${esc(appState.arbeitsmodus)}</div><div class="preview-row"><b>Paket:</b> ${esc(appState.paket||"-")}</div><div class="preview-row"><b>Objekt:</b> ${esc(appState.objekt.strasse)} ${esc(appState.objekt.hausnummer)}, ${esc(appState.objekt.plz)} ${esc(appState.objekt.ort)}</div><div class="preview-row"><b>Räume:</b> ${appState.raeume.length} ausgewählt · ${fertig} fertig</div><div class="card-title" style="margin-top:15px">🏠 RÄUME / BEREICHE</div>${roomHtml||`<div class="notice">Keine Räume vorhanden.</div>`}<div class="card-title" style="margin-top:15px">⚡ ZÄHLERSTÄNDE</div>${meterHtml||`<div class="notice">Keine Zähler vorhanden.</div>`}${todoHtml}<div class="card-title" style="margin-top:15px">Mängelnotizen aus den Räumen</div>${mangel.length?mangel.map(r=>`<div class="notice" style="margin-bottom:8px">📍 <b>${esc(r.name)}</b><br>${esc(r.formKommentar||"Mangelhaft")}</div>`).join(""):`<div class="notice">✓ Keine Mängelnotizen vorhanden.</div>`}</div>`;
+}
+
+function renderSignaturScreen(pMiddle){
+ const mieterName=appState.kunde.name||"Mieter / Bevollmächtigter";
+ pMiddle.innerHTML=`
+ <div class="card" style="text-align:center">
+  <div class="card-title">✍️ DIGITALE UNTERSCHRIFTEN</div>
+  <p class="sub" style="margin-bottom:12px">Beide Beteiligten unterschreiben vor Ort mit Finger, Stift oder Maus.</p>
+
+  <div class="notice" style="margin-bottom:10px;text-align:left">
+   <b>1. Dienstleister / Bevollmächtigter</b><br>
+   ${esc(COMPANY.name)} – RESPECTURY
+  </div>
+  <canvas id="sig_dienstleister" width="900" height="260"></canvas>
+  <br>
+  <button class="btn ghost" onclick="clearSignature('dienstleister')">✕ Unterschrift Dienstleister löschen</button>
+
+  <div class="notice" style="margin:20px 0 10px;text-align:left">
+   <b>2. Mieter / Bevollmächtigter</b><br>
+   ${esc(mieterName)}
+  </div>
+  <canvas id="sig_mieter" width="900" height="260"></canvas>
+  <br>
+  <button class="btn ghost" onclick="clearSignature('mieter')">✕ Unterschrift Mieter löschen</button>
+
+  <div class="notice" style="margin-top:15px;text-align:left">
+   <b>Datum der Unterschriften:</b> ${esc(getSignatureDate())}<br>
+   Beide Unterschriften werden beim PDF-Erstellen eindeutig den jeweiligen Beteiligten zugeordnet in den Report übernommen.
+   <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:15px">
+    <button class="btn gold" onclick="generateInvoicePDF()">🧾 Rechnung separat erstellen</button>
+   </div>
+  </div>
+ </div>`;
+ initSignaturePads();
+}
+
+function getSignatureDate(){
+ const today=new Date().toLocaleDateString("de-DE");
+ if(!appState.unterschriftDatum) appState.unterschriftDatum=today;
+ saveState();
+ return appState.unterschriftDatum;
+}
+
+function initSignaturePads(){
+ dienstleisterCanvas=document.getElementById("sig_dienstleister");
+ mieterCanvas=document.getElementById("sig_mieter");
+ if(dienstleisterCanvas){dienstleisterCtx=setupSignaturePad(dienstleisterCanvas);}
+ if(mieterCanvas){mieterCtx=setupSignaturePad(mieterCanvas);}
+}
+
+function setupSignaturePad(c){
+ const cctx=c.getContext("2d");
+ cctx.strokeStyle="#051425";
+ cctx.lineWidth=3;
+ cctx.lineCap="round";
+ let drawingLocal=false;
+ const point=e=>{
+  const rect=c.getBoundingClientRect();
+  return {x:(e.clientX-rect.left)*(c.width/rect.width),y:(e.clientY-rect.top)*(c.height/rect.height)};
+ };
+ const start=e=>{drawingLocal=true;const pt=point(e);cctx.beginPath();cctx.moveTo(pt.x,pt.y)};
+ const move=e=>{if(!drawingLocal)return;const pt=point(e);cctx.lineTo(pt.x,pt.y);cctx.stroke()};
+ const end=()=>{drawingLocal=false};
+ c.onmousedown=start;c.onmousemove=move;c.onmouseup=end;c.onmouseleave=end;
+ c.ontouchstart=e=>{e.preventDefault();start(e.touches[0])};
+ c.ontouchmove=e=>{e.preventDefault();move(e.touches[0])};
+ c.ontouchend=e=>{e.preventDefault();end()};
+ return cctx;
+}
+
+function clearSignature(who){
+ if(who==="dienstleister" && dienstleisterCanvas && dienstleisterCtx){dienstleisterCtx.clearRect(0,0,dienstleisterCanvas.width,dienstleisterCanvas.height);}
+ if(who==="mieter" && mieterCanvas && mieterCtx){mieterCtx.clearRect(0,0,mieterCanvas.width,mieterCanvas.height);}
+}
+
+function clearCanvas(){clearSignature("dienstleister");clearSignature("mieter")}
+
+function renderLiveSpalte(){
+ const pane=document.getElementById("pane_right");
+ const netto=(Number(appState.preis)||0)+(Number(appState.leistungen.anfahrtPreis)||0)+(Number(appState.leistungen.materialPreis)||0)+(Number(appState.leistungen.wohnflaechePreis)||0)+(appState.leistungen.zusatzReinigung?85:0);
+ const mwst=netto*.19;
+ const brutto=netto+mwst;
+ const mCount=appState.raeume.filter(r=>r.formZustand==="Mangelhaft"||r.formKommentar.length>2).length;
+
+ pane.innerHTML=`
+  <div class="live-box"><h4>📍 OBJEKT & AUFTRAG</h4>
+   <div class="live-line"><span>Auftrag-Nr.</span><b>${esc(appState.auftrag)}</b></div>
+   <div class="live-line"><span>Modus</span><b>${esc(appState.arbeitsmodus)}</b></div>
+   <div class="live-line"><span>Adresse</span><b>${esc(appState.objekt.strasse||"-")} ${esc(appState.objekt.hausnummer||"")}</b></div>
+    <div class="live-line"><span>Etage / Lage</span><b>${esc(appState.objekt.etage||"-")}</b></div>
+  </div>
+  <div class="live-box"><h4>📊 DOKUMENTATIONSSTAND</h4>
+   <div class="live-line"><span>Räume</span><b>${appState.raeume.filter(r=>r.status==="fertig").length}/${appState.raeume.length}</b></div>
+   <div class="live-line"><span>Mängel-Fokus</span><b style="color:${mCount?"var(--orange)":"var(--green)"}">${mCount} Bereiche</b></div>
+   <div class="live-line"><span>Zähler</span><b>${appState.zaehler.filter(z=>z.status==="ok").length}/${appState.zaehler.length}</b></div>
+  </div>
+  <div class="live-box"><h4>🧾 LIVE-KOSTENÜBERSICHT</h4>
+   <div class="live-line"><span>Grundtarif</span><span>${(appState.preis||0).toFixed(2)} €</span></div>
+   <div class="live-line"><span>Fahrgeld</span><span>${(appState.leistungen.anfahrtPreis||0).toFixed(2)} €</span></div>    <div class="live-line"><span>Mehrfläche</span><span>${(appState.leistungen.wohnflaechePreis||0).toFixed(2)} €</span></div>
+   <div class="live-line"><span>Material</span><span>${(appState.leistungen.materialPreis||0).toFixed(2)} €</span></div>
+   <div class="live-line"><span>Zusatz-Reinigung</span><span>${(appState.leistungen.zusatzReinigung?85:0).toFixed(2)} €</span></div>
+   <div class="live-line"><span>Netto</span><span>${netto.toFixed(2)} €</span></div>
+   <div class="live-line"><span>19% MwSt.</span><span>${mwst.toFixed(2)} €</span></div>
+   <div class="live-line live-total-line"><span>Brutto</span><span>${brutto.toFixed(2)} €</span></div>
+  </div>`;
+}
+
+function addText(doc,text,x,y,maxWidth,lineHeight=6){
+ const lines=doc.splitTextToSize(String(text||"-"),maxWidth);
+ doc.text(lines,x,y);
+ return y+lines.length*lineHeight;
+}
+
+const COMPANY={
+ name:"René Ewert",
+ brand:"respectury.",
+ street:"[FIRMENSTRASSE / HAUSNUMMER]",
+ city:"[PLZ] [ORT]",
+ phone:"0178 7116197",
+ email:"info@respectury.de",
+ web:"www.respectury.de",
+ tax:"[STEUERNUMMER / UST-IDNR.]",
+ bank:"[BANKNAME]",
+ iban:"[IBAN EINTRAGEN]",
+ bic:"[BIC EINTRAGEN]"
+};
+
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function pdfImageData(data, maxW=1024, quality=0.72){
+  if(!data) return null;
+  if(!String(data).startsWith("data:image/")) return data;
+  return await new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const scale=Math.min(1, maxW/img.naturalWidth);
+        const w=Math.max(1, Math.round(img.naturalWidth*scale));
+        const h=Math.max(1, Math.round(img.naturalHeight*scale));
+        const c=document.createElement("canvas");
+        c.width=w; c.height=h;
+        const ctx=c.getContext("2d");
+        ctx.drawImage(img,0,0,w,h);
+        resolve(c.toDataURL("image/jpeg",quality));
+      }catch(e){ reject(e); }
+    };
+    img.onerror=()=>reject(new Error("Bild konnte für das PDF nicht verarbeitet werden."));
+    img.src=data;
+  });
+}
+
+
+function drawRespecturyLogo(doc,x,y){
+  doc.setLineWidth(0.5); doc.setDrawColor(0,168,255); doc.ellipse(x+14,y+9,14,7.5,"S");
+  doc.setDrawColor(255,255,255); doc.ellipse(x+14,y+9,9.5,5,"S");
+  doc.setFillColor(255,199,0); doc.triangle(x+14,y+2,x+7,y+9,x+21,y+9,"F"); doc.rect(x+10,y+9,8,6.5,"F");
+  doc.setFillColor(5,20,37); doc.rect(x+13.1,y+12,1.8,3.2,"F");
+}
+
+function reportHeader(doc,title,pageNo){
+  // RESPECTURY V18.3 – druckfreundlicher Corporate-PDF-Kopf
+  // Weiße Inhaltsseiten, dunkler Kopf, blaue/goldene Akzente.
+  doc.setFillColor(255,255,255); doc.rect(0,0,210,297,"F");
+
+  // Kopfbereich
+  doc.setFillColor(5,20,37); doc.rect(0,0,210,56,"F");
+  doc.setFont("Helvetica","bold"); doc.setFontSize(24); doc.setTextColor(255,255,255);
+  doc.text("respectury",14,23);
+  doc.setFont("Helvetica","normal"); doc.setFontSize(6.2); doc.setTextColor(232,244,255);
+  doc.text("WOHNUNGSÜBERGABEN  •  DOKUMENTATION  •  BAUZUSTANDS-CHECKS",14,32);
+  doc.setFont("Helvetica","italic"); doc.setFontSize(6.5); doc.setTextColor(255,199,0);
+  doc.text("Wir haben ein Auge auf Ihre Immobilie.",14,42);
+
+  doc.setFont("Helvetica","bold"); doc.setFontSize(10.5); doc.setTextColor(255,255,255);
+  doc.text("SCHNELL.",132,15);
+  doc.setTextColor(0,168,255); doc.text("PROTOKOLLIERT.",132,27);
+  doc.setTextColor(255,255,255); doc.text("STRESSFREI.",132,39);
+  doc.setDrawColor(0,168,255); doc.setLineWidth(.7); doc.line(14,51,196,51);
+
+  // Dokumenttitel
+  doc.setFont("Helvetica","bold"); doc.setFontSize(11.5); doc.setTextColor(5,30,50);
+  doc.text("DIGITALES WOHNUNGSÜBERGABEPROTOKOLL",14,68);
+  doc.setFont("Helvetica","normal"); doc.setFontSize(6.8); doc.setTextColor(100,115,130);
+  doc.text("RESPECTURY PRO V18.3",162,68);
+  doc.setFont("Helvetica","bold"); doc.setFontSize(12.5); doc.setTextColor(5,30,50);
+  doc.text(title,14,82);
+
+  // Fußzeile
+  doc.setFillColor(5,20,37); doc.rect(0,288,210,9,"F");
+  doc.setFont("Helvetica","normal"); doc.setFontSize(6.8); doc.setTextColor(220,235,248);
+  doc.text((appState.auftrag||"-")+"  •  Seite "+pageNo,14,294);
+  doc.text("RESPECTURY PRO  •  Digitale Dokumentation",132,294);
+}
+function addWhitePanel(doc,x,y,w,h){
+  doc.setFillColor(255,255,255); doc.roundedRect(x,y,w,h,3,3,"F");
+  // Dünner, dezenter blauer Rahmen – Design bleibt erhalten, wirkt aber leichter.
+  doc.setDrawColor(0,168,255); doc.setLineWidth(.16); doc.roundedRect(x,y,w,h,3,3,"S");
+}
+function addSectionTitle(doc,title,x,y,w){
+  doc.setFont("Helvetica","bold"); doc.setFontSize(11); doc.setTextColor(5,50,105); doc.text(title,x,y);
+  doc.setDrawColor(0,168,255); doc.setLineWidth(.45); doc.line(x,y+4,x+w,y+4);
+}
+
+function addText(doc,text,x,y,maxWidth,lineHeight=6){
+  const lines=doc.splitTextToSize(String(text||"-"),maxWidth);
+  doc.text(lines,x,y);
+  return y+lines.length*lineHeight;
+}
+
+async function generateReportPDF(){
+  try{
+  if(!window.jspdf){alert("PDF-Bibliothek wurde nicht geladen. Bitte Internetverbindung prüfen oder jsPDF lokal einbinden.");return}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  const netto=(Number(appState.preis)||0)+(Number(appState.leistungen.anfahrtPreis)||0)+(Number(appState.leistungen.materialPreis)||0)+(Number(appState.leistungen.wohnflaechePreis)||0)+(appState.leistungen.zusatzReinigung?85:0);
+  const mwst=netto*.19,brutto=netto+mwst;
+
+  // Seite 1 – Stammdaten & Auftrag im neuen Corporate-Layout
+  reportHeader(doc,"STAMMDATEN & AUFTRAG",1);
+  addWhitePanel(doc,10,90,190,108);
+  addSectionTitle(doc,"STAMMDATEN & AUFTRAG",18,103,174);
+  doc.setFont("Helvetica","bold"); doc.setFontSize(8.2); doc.setTextColor(0,0,0);
+  doc.text("Auftragsnummer",18,116); doc.text("Datum",18,126); doc.text("Übergabeart",18,136); doc.text("Tarif / Paket",18,146); doc.text("Rechnungsstatus",18,156); doc.text("Leistungsort",18,166); doc.text("PLZ / Ort",18,176); doc.text("Etage / Lage",18,186); doc.text("Wohnfläche",18,196);
+  doc.text("Auftraggeber",122,116); doc.text("Ansprechpartner",122,126); doc.text("Telefon / E-Mail",122,136);
+  doc.setFont("Helvetica","normal"); doc.setFontSize(9.2); doc.setTextColor(0,0,0);
+  doc.text(String(appState.auftrag||"-"),61,116); doc.text(new Date().toLocaleDateString("de-DE"),61,126); doc.text(String(appState.arbeitsmodus||"-"),61,136);
+  doc.text(String((appState.paket||"-")+" | "+(appState.paketZimmer||"")+" | "+(appState.paketKategorie||"")),61,146); doc.text("separat erstellbar",61,156);
+  doc.text(String((appState.objekt.strasse||"-")+" "+(appState.objekt.hausnummer||"-")),61,166); doc.text(String((appState.objekt.plz||"-")+" "+(appState.objekt.ort||"-")),61,176); doc.text(String(appState.objekt.etage||"-"),61,186); doc.text((Number(appState.leistungen.wohnflaeche)||0)>0 ? String(Number(appState.leistungen.wohnflaeche).toFixed(1)).replace(".0","") + " m²" : "-",61,196);
+  doc.text(String(appState.kunde.firma||"Privatkunde"),163,116); doc.text(String(appState.kunde.name||"-"),163,126); doc.text(String((appState.kunde.telefon||"-")+" / "+(appState.kunde.email||"-")),163,136);
+
+  addWhitePanel(doc,10,205,190,57); addSectionTitle(doc,"OBJEKT & WOHNUNG",18,218,174);
+  doc.setFont("Helvetica","bold"); doc.setFontSize(8.2); doc.setTextColor(0,0,0); doc.text("Objektadresse",18,232); doc.text("Etage / Lage",18,242); doc.text("Dokumentierte Räume",122,232); doc.text("Zähler",122,242);
+  doc.setFont("Helvetica","normal"); doc.setFontSize(9.2); doc.setTextColor(0,0,0);
+  doc.text(String((appState.objekt.strasse||"-")+" "+(appState.objekt.hausnummer||"-")+", "+(appState.objekt.plz||"-")+" "+(appState.objekt.ort||"-")),58,232); doc.text(String(appState.objekt.etage||"-"),58,242); doc.text(String(appState.raeume.length),163,232); doc.text(String(appState.zaehler.length),163,242);
+  doc.setFont("Helvetica","italic"); doc.setFontSize(6.8); doc.setTextColor(0,0,0); doc.text("Die Rechnung wird als separates PDF erstellt und ist nicht Bestandteil dieses Protokolls.",18,274);
+
+  // Seite 2+ Räume – 2 Fotos nebeneinander
+  let pageNo=2;
+  doc.addPage(); reportHeader(doc,"BEREICHS- UND RAUMPROTOKOLL",pageNo);
+  let y=86;
+  for(const r of appState.raeume){
+    const fotos=(r.formKachelDaten||[]).filter(k=>k.data);
+    const baseHeight=34 + (fotos.length ? Math.ceil(fotos.length/2)*72 : 0);
+    if(y+baseHeight>275){pageNo++;doc.addPage();reportHeader(doc,"BEREICHS- UND RAUMPROTOKOLL",pageNo);y=86;}
+    addWhitePanel(doc,10,y-7,190,Math.min(baseHeight,185));
+    doc.setTextColor(0,0,0); doc.setFont("Helvetica","bold"); doc.setFontSize(11);
+    doc.text("Bereich: "+r.name+"  ·  "+(r.etage||appState.objekt.etage||"EG"),18,y);
+    y+=7; doc.setFont("Helvetica","normal"); doc.setFontSize(9.5);
+    y=addText(doc,"Zustand: "+(r.formZustand||"Nicht klassifiziert"),18,y,174,5);
+    y=addText(doc,"Geprüft: "+(r.formChecklist.join(", ")||"Keine Angaben"),18,y,174,5);
+    y=addText(doc,"Bemerkung: "+(r.formKommentar||"Keine Bemerkung"),18,y,174,5);
+    if(fotos.length){
+      y+=3; doc.setFont("Helvetica","bold"); doc.text("Fotos: "+fotos.length,18,y); y+=5;
+      for(let i=0;i<fotos.length;i++){
+        if(i%2===0){
+          if(y>258){pageNo++;doc.addPage();reportHeader(doc,"BEREICHS- UND RAUMPROTOKOLL – FOTOS",pageNo);y=86;}
+        }
+        const x=(i%2===0)?18:109;
+        try{
+          const imgData=await pdfImageData(fotos[i].data,1024,0.72);
+          doc.addImage(imgData,"JPEG",x,y,78,58,undefined,"FAST");
+        }catch(e){
+          try{
+            const imgData=await pdfImageData(fotos[i].data.replace(/^data:image\/[^;]+;/,"data:image/jpeg;"),1024,0.72);
+            doc.addImage(imgData,"JPEG",x,y,78,58,undefined,"FAST");
+          }catch(e2){}
+        }
+        doc.setFont("Helvetica","normal"); doc.setFontSize(7); doc.setTextColor(0,0,0);
+        doc.text(fotos[i].label||"Foto",x,y+64);
+        if(i%2===1) y+=72;
+      }
+      if(fotos.length%2===1)y+=72;
+    }
+    y+=10;
+    await sleep(35);
+  }
+
+  // Vorabnahme – abgearbeitete Bereiche / To-do-Liste
+  const todos=(appState.vorabnahme&&Array.isArray(appState.vorabnahme.todos))?appState.vorabnahme.todos:[];
+  if(todos.length){
+    pageNo++; doc.addPage(); reportHeader(doc,"VORABNAHME – ABGEARBEITETE BEREICHE",pageNo);
+    let todoY=88;
+    addWhitePanel(doc,10,todoY-8,190,Math.min(235,28+todos.length*11));
+    addSectionTitle(doc,"ABGEARBEITETE BEREICHE / TO-DO-LISTE",18,todoY,174);
+    todoY+=12;
+    doc.setFont("Helvetica","normal"); doc.setFontSize(9.2); doc.setTextColor(0,0,0);
+    for(const t of todos){
+      if(todoY>270){
+        pageNo++; doc.addPage(); reportHeader(doc,"VORABNAHME – ABGEARBEITETE BEREICHE",pageNo);
+        todoY=88; addWhitePanel(doc,10,todoY-8,190,180); addSectionTitle(doc,"ABGEARBEITETE BEREICHE / TO-DO-LISTE",18,todoY,174); todoY+=12;
+        doc.setFont("Helvetica","normal"); doc.setFontSize(9.2); doc.setTextColor(0,0,0);
+      }
+      const status=t.done?"☑":"☐";
+      doc.setFont("Helvetica","bold"); doc.setFontSize(10); doc.text(status,18,todoY);
+      doc.setFont("Helvetica",t.done?"normal":"bold"); doc.setFontSize(9.2);
+      const lines=doc.splitTextToSize(String(t.text||""),166);
+      doc.text(lines,27,todoY);
+      if(t.done){
+        const textWidth=Math.min(166,doc.getTextWidth(String(t.text||"")));
+        doc.setDrawColor(100,100,100); doc.setLineWidth(.25); doc.line(27,todoY-1,27+textWidth,todoY-1);
+      }
+      todoY+=Math.max(11,lines.length*5+5);
+    }
+    doc.setFont("Helvetica","italic"); doc.setFontSize(7.5); doc.setTextColor(80,80,80);
+    doc.text("Die Liste entspricht dem bei der Vorabnahme in der App erfassten Bearbeitungsstand.",18,Math.min(todoY+4,274));
+  }
+
+  // Zählerseite – Daten links, Foto rechts
+  pageNo++; doc.addPage(); reportHeader(doc,"VERIFIZIERTE OBJEKT-ZÄHLERSTÄNDE",pageNo); y=86;
+  for(const z of appState.zaehler){
+    const meterTitle = getMeterTypeLabel(z);
+    const meterName = getMeterNameLabel(z);
+    const meterNumber = String(z.nummer||"Nicht angegeben");
+    const meterValue = String(z.wert!==undefined && z.wert!==null && z.wert!=="" ? z.wert : (z.kiWert||"Nicht angegeben"));
+    const meterUnit = String(z.einheit||"");
+    const meterStatus = z.status==="ok" ? "VERIFIZIERT" : "OFFEN";
+    const meterManufacturer = String(z.hersteller||"-");
+    const meterModel = String(z.modell||"-");
+    const panelH = z.foto ? 92 : 58;
+    if(y+panelH>278){pageNo++;doc.addPage();reportHeader(doc,"VERIFIZIERTE OBJEKT-ZÄHLERSTÄNDE",pageNo);y=86;}
+
+    addWhitePanel(doc,10,y-8,190,panelH);
+    const top=y;
+    doc.setTextColor(0,0,0);doc.setFont("Helvetica","bold");doc.setFontSize(11);
+    doc.text(meterTitle+(meterName?" – "+meterName:""),18,top);
+
+    // Datenblock links – niemals über dem Foto.
+    let dy=top+10;
+    doc.setFont("Helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(0,0,0);
+    doc.text("ZÄHLERNUMMER",18,dy); doc.text("ABGELESENER STAND",18,dy+13);
+    doc.text("STATUS",18,dy+26); doc.text("HERSTELLER",18,dy+39); doc.text("MODELL",18,dy+52);
+    doc.setFont("Helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(0,0,0);
+    doc.text(meterNumber,52,dy);
+    doc.text(meterValue+" "+meterUnit,52,dy+13);
+    doc.text(meterStatus,52,dy+26);
+    doc.text(meterManufacturer,52,dy+39);
+    doc.text(meterModel,52,dy+52);
+
+    if(z.foto){
+      doc.setFont("Helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(0,0,0);
+      doc.text("ZÄHLERFOTO",116,top+10);
+      try{
+        const meterImg=await pdfImageData(z.foto,1024,0.72);
+        doc.addImage(meterImg,"JPEG",116,top+14,72,58,undefined,"FAST");
+      }catch(e){
+        doc.setFont("Helvetica","normal");doc.setFontSize(7);doc.setTextColor(0,0,0);
+        doc.text("Zählerfoto konnte nicht eingebettet werden.",116,top+25);
+      }
+    }
+    y += panelH + 8;
+    await sleep(35);
+  }
+
+  // Signaturen – keine Rechnung mehr im Report
+  pageNo++; doc.addPage(); reportHeader(doc,"DIGITAL ERFASSTE UNTERSCHRIFTEN",pageNo);
+  addWhitePanel(doc,10,84,190,184);
+  doc.setTextColor(0,0,0);doc.setFont("Helvetica","normal");doc.setFontSize(8.5);
+  y=98;
+  y=addText(doc,"Hiermit wird die digitale Erfassung der dokumentierten Angaben bestätigt. Automatische KI-Ergebnisse wurden durch den Anwender geprüft.",20,y,170,5);
+  const signDate=appState.unterschriftDatum||getSignatureDate();
+  doc.setFont("Helvetica","bold");doc.setFontSize(10);doc.text("Dienstleister / Bevollmächtigter",20,128);
+  doc.setFont("Helvetica","normal");doc.text(COMPANY.name+" – RESPECTURY",20,135);
+  if(dienstleisterCanvas){doc.addImage(dienstleisterCanvas.toDataURL("image/png"),"PNG",20,141,110,30);}
+  doc.line(20,175,130,175);doc.setFontSize(8);doc.text("Unterschrift Dienstleister / Bevollmächtigter",20,181);doc.text("Datum: "+signDate,20,187);
+  doc.setFont("Helvetica","bold");doc.setFontSize(10);doc.text("Mieter / Bevollmächtigter",20,205);
+  doc.setFont("Helvetica","normal");doc.text(appState.kunde.name||"Mieter / Bevollmächtigter",20,212);
+  if(mieterCanvas){doc.addImage(mieterCanvas.toDataURL("image/png"),"PNG",20,218,110,30);}
+  doc.line(20,252,130,252);doc.setFontSize(8);doc.text("Unterschrift Mieter / Bevollmächtigter",20,258);doc.text("Datum: "+signDate,20,264);
+    // Bestätigungstext für die letzte PDF-Seite – druckfreundlich, schwarz und gut lesbar
+    doc.setTextColor(0,0,0);
+    doc.setFont("Helvetica","bold");
+    doc.setFontSize(9.5);
+    doc.text("Bestätigung",20,269);
+
+    doc.setFont("Helvetica","normal");
+    doc.setFontSize(8.5);
+    const bestaetigung =
+      "Die unterzeichnenden Parteien bestätigen mit ihrer Unterschrift die Richtigkeit " +
+      "und Vollständigkeit der in diesem Protokoll dokumentierten Angaben sowie den " +
+      "Zustand des Objekts zum Zeitpunkt der Besichtigung.";
+    const bestaetigungZeilen = doc.splitTextToSize(bestaetigung,170);
+    doc.text(bestaetigungZeilen,20,275);
+
+    doc.setFont("Helvetica","normal");
+    doc.setFontSize(8.5);
+    const kiHinweis =
+      "Automatische KI-Ergebnisse wurden durch den Anwender geprüft und verifiziert.";
+    doc.text(doc.splitTextToSize(kiHinweis,170),20,285);
+
+
+  const filename="Respectury_V18_3_"+appState.arbeitsmodus.replace(/[^A-Za-z0-9_-]/g,"_")+"_"+appState.auftrag+".pdf";
+  try{doc.save(filename);}catch(err){alert("PDF konnte nicht gespeichert werden. Bitte erneut versuchen.\n\n"+err.message);console.error(err);return;}
+  alert("Der Digital Report V18.3 wurde erstellt. Die Rechnung wird separat erstellt.");
+  }catch(err){
+    console.error("RESPECTURY PDF-Fehler:",err);
+    alert("Der Digital Report konnte nicht erstellt werden.\n\nFehler: "+(err && err.message ? err.message : err));
+  }
+}
+
+function generateInvoicePDF(){
+  if(!window.jspdf){alert("PDF-Bibliothek wurde nicht geladen. Bitte Internetverbindung prüfen oder jsPDF lokal einbinden.");return}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  const netto=(Number(appState.preis)||0)+(Number(appState.leistungen.anfahrtPreis)||0)+(Number(appState.leistungen.materialPreis)||0)+(Number(appState.leistungen.wohnflaechePreis)||0)+(appState.leistungen.zusatzReinigung?85:0);
+  const mwst=netto*.19,brutto=netto+mwst;
+  // Rechnungs-Kopf: dunkler Hintergrund + helle Schrift, damit der komplette Kopf
+  // auch beim Ausdruck auf weißen/hellen Druckeinstellungen eindeutig lesbar bleibt.
+  doc.setFillColor(5,20,37);doc.rect(0,0,210,42,"F");
+  doc.setFont("Helvetica","bold");doc.setFontSize(25);doc.setTextColor(255,199,0);
+  doc.text(COMPANY.brand,20,18);
+  doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont("Helvetica","normal");
+  doc.text(COMPANY.name,20,26);
+  doc.text(COMPANY.street+" | "+COMPANY.city,20,32);
+  doc.text(COMPANY.phone+" | "+COMPANY.email+" | "+COMPANY.web,20,38);
+  doc.setTextColor(0,0,0);doc.setFont("Helvetica","bold");doc.setFontSize(16);doc.text("RECHNUNG",20,58);
+  doc.setFont("Helvetica","normal");doc.setFontSize(9);
+  doc.text("Rechnungsnummer: RE-"+appState.auftrag.replace("RDR-",""),130,52);
+  doc.text("Auftragsnummer: "+appState.auftrag,130,59);
+  doc.text("Rechnungsdatum: "+new Date().toLocaleDateString("de-DE"),130,66);
+  let y=80;doc.setFont("Helvetica","bold");doc.text("Auftraggeber",20,y);doc.setFont("Helvetica","normal");y+=7;
+  y=addText(doc,appState.kunde.firma||"Privatkunde",20,y,170);
+  y=addText(doc,"z.Hd. "+(appState.kunde.name||"-"),20,y,170);
+  y=addText(doc,"Leistungsort: "+(appState.objekt.strasse||"")+" "+(appState.objekt.hausnummer||"")+", "+(appState.objekt.plz||"")+" "+(appState.objekt.ort||""),20,y,170);
+  y+=10;doc.setFont("Helvetica","bold");doc.text("Leistungsbeschreibung",20,y);doc.text("Betrag",160,y);doc.setFont("Helvetica","normal");y+=8;
+  const items=[
+   [appState.arbeitsmodus==="Vorabnahme"?"Vorabnahme-Paket "+(appState.paketZimmer||""):appState.arbeitsmodus==="Leerstandskontrolle"?"Leerstandskontrolle "+(appState.paketZimmer||""):"Wohnungsübergabe Paket "+(appState.paket||"-"),appState.preis],
+   ...(appState.leistungen.anfahrtPreis>0?[["Fahrtkosten ("+appState.leistungen.km+" km)",appState.leistungen.anfahrtPreis]]:[]),    ...(appState.leistungen.wohnflaechePreis>0?[["Mehrfläche ("+appState.leistungen.mehrflaeche.toFixed(1)+" m² × 2,50 €)",appState.leistungen.wohnflaechePreis]]:[]),
+   ...(appState.leistungen.materialPreis>0?[["Professionelles Putzmittel-Kit",appState.leistungen.materialPreis]]:[]),
+   ...(appState.leistungen.zusatzReinigung?[["Zusatz-Reinigung",85]]:[])
+  ];
+  items.forEach(it=>{doc.text(it[0],20,y);doc.text(Number(it[1]).toFixed(2)+" €",160,y);y+=9});
+  y+=8;doc.text("NETTO-ZWISCHENSUMME:",110,y);doc.text(netto.toFixed(2)+" €",160,y);y+=8;
+  doc.text("zzgl. 19% MwSt.:",110,y);doc.text(mwst.toFixed(2)+" €",160,y);y+=9;
+  doc.setFont("Helvetica","bold");doc.text("RECHNUNGSBETRAG GESAMT:",100,y);doc.text(brutto.toFixed(2)+" €",160,y);
+  y+=18;doc.text("Zahlungsinformationen",20,y);doc.setFont("Helvetica","normal");y+=7;
+  y=addText(doc,"Bank: "+COMPANY.bank,20,y,170);y=addText(doc,"IBAN: "+COMPANY.iban,20,y,170);
+  y=addText(doc,"BIC: "+COMPANY.bic,20,y,170);y=addText(doc,"Steuernummer / USt-IdNr.: "+COMPANY.tax,20,y,170);
+  y+=6;addText(doc,"Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen unter Angabe der Rechnungsnummer.",20,y,170);
+  const filename="Respectury_Rechnung_"+appState.auftrag+".pdf";
+  try{doc.save(filename);}catch(err){alert("Rechnung konnte nicht gespeichert werden.\n\n"+err.message);console.error(err);return;}
+  appState.rechnungErstellt=true;appState.rechnungsstatus="erstellt";saveState();
+  alert("Die Rechnung wurde separat als PDF erstellt.");
+}
+</script>
+<script>
+const v184BemerkungsVorschlaege=["Wohnung wurde vollständig geräumt und besenrein übergeben.", "Es wurden keine sichtbaren Mängel oder Schäden festgestellt.", "Alle elektrischen Geräte und Sanitäranlagen wurden erfolgreich auf Funktion geprüft.", "Die Wohnung wird im renovierten Zustand (frisch gestrichen) übergeben.", "Die Wände weisen leichte, altersbedingte Gebrauchsspuren auf.", "Ein Nachstreichen der Wände durch den Mieter ist nicht erforderlich.", "Es verbleiben mieterseitige Einbauten (z. B. Küche/Laminat) in der Wohnung.", "Folgende Einbauten wurden vom Nachmieter gegen Abstandszahlung übernommen: [Text].", "Folgender Mangel wurde festgestellt: [Text].", "Der Vermieter verpflichtet sich, den oben genannten Mangel bis zum [Datum] zu beheben.", "Der Mieter übernimmt die Behebung des Mangels auf eigene Kosten.", "Einbehalt eines Teils der Kaution (Höhe: [Betrag] €) bis zur Mängelbeseitigung vereinbart.", "Alle Schlüssel wurden vollständig und unbeschädigt übergeben.", "Ein Schlüssel ([Typ]) fehlt und wird vom Mieter bis zum [Datum] nachgeliefert.", "Die Zählerstände wurden zusätzlich per Foto dokumentiert.", "Keine weiteren mündlichen Nebenabreden getroffen."];
+function v184ToggleVorschlaege(){
+  const b=document.getElementById("v184_bemerkungs_vorschlaege");
+  if(!b)return;
+  if(!b.innerHTML.trim())v184RenderBemerkungsVorschlaege();
+  b.classList.toggle("v184-open");
+}
+
+function v184AddBemerkung(s){
+  const a=document.getElementById("r_comment_area");
+  if(!a)return;
+  const c=a.value||"";
+  const lines=c.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  if(lines.includes(s)){a.focus();return;}
+  a.value=c.trim()?c.trimEnd()+"\n"+s:s;
+  a.dispatchEvent(new Event("input",{bubbles:true}));
+  a.dispatchEvent(new Event("change",{bubbles:true}));
+  if(typeof saveRoomData==="function")saveRoomData();
+  a.focus();
+}
+
+function v184RenderBemerkungsVorschlaege(){
+  const b=document.getElementById("v184_bemerkungs_vorschlaege");
+  if(!b)return;
+  b.innerHTML=v184BemerkungsVorschlaege.map((s,i)=>
+    '<button type="button" class="v184-satz" data-v184-index="'+i+'"><span>＋</span>'+s+'</button>'
+  ).join("");
+}
+
+document.addEventListener("click",function(e){
+  const btn=e.target.closest && e.target.closest("#v184_bemerkungs_vorschlaege .v184-satz");
+  if(!btn)return;
+  const i=parseInt(btn.getAttribute("data-v184-index"),10);
+  if(!Number.isNaN(i) && v184BemerkungsVorschlaege[i]){
+    v184AddBemerkung(v184BemerkungsVorschlaege[i]);
+  }
+});
+
+document.addEventListener("DOMContentLoaded",()=>setTimeout(v184RenderBemerkungsVorschlaege,250));
+
+const v184Observer=new MutationObserver(()=>{
+  const b=document.getElementById("v184_bemerkungs_vorschlaege");
+  if(b&&!b.innerHTML.trim())v184RenderBemerkungsVorschlaege();
+});
+if(document.body)v184Observer.observe(document.body,{childList:true,subtree:true});
+</script></body>
+</html>
+

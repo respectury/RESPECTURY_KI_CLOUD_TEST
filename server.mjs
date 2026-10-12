@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import OpenAI from 'openai';
 
@@ -9,68 +10,72 @@ const __dirname=path.dirname(__filename);
 const app=express();
 const PORT=Number(process.env.PORT||8787);
 const client=new OpenAI({apiKey:process.env.OPENAI_API_KEY});
+const APP_PASSWORD=process.env.APP_PASSWORD;
+const SESSION_SECRET=process.env.APP_SESSION_SECRET||APP_PASSWORD||'';
 
 app.use(express.json({limit:'12mb'}));
 
+function makeSessionToken(){
+  const payload=Buffer.from(JSON.stringify({iat:Date.now()})).toString('base64url');
+  const sig=crypto.createHmac('sha256',SESSION_SECRET).update(payload).digest('base64url');
+  return `${payload}.${sig}`;
+}
+function validSession(req){
+  if(!APP_PASSWORD)return true;
+  const token=String(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('respectury_session='))?.split('=')[1]||'';
+  const [payload,sig]=token.split('.');
+  if(!payload||!sig||!SESSION_SECRET)return false;
+  const expected=crypto.createHmac('sha256',SESSION_SECRET).update(payload).digest('base64url');
+  if(sig.length!==expected.length)return false;
+  if(!crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(expected)))return false;
+  try{const obj=JSON.parse(Buffer.from(payload,'base64url').toString('utf8'));return Date.now()-Number(obj.iat)<1000*60*60*12;}catch{return false;}
+}
+function setSession(req,res){
+  // Lokal (http://localhost) darf das Cookie NICHT als Secure markiert sein.
+  // Auf Render/HTTPS wird es automatisch Secure.
+  const proto=String(req.headers['x-forwarded-proto']||'').split(',')[0].trim().toLowerCase();
+  const isHttps=req.secure || proto==='https';
+  const secure=isHttps?' Secure;':'';
+  res.setHeader('Set-Cookie',`respectury_session=${makeSessionToken()}; HttpOnly; Path=/; SameSite=Lax;${secure}`);
+}
+
+app.post('/api/login',(req,res)=>{
+  const password=String(req.body?.password||'');
+  if(APP_PASSWORD && password===APP_PASSWORD){setSession(req,res);return res.json({ok:true});}
+  return res.status(401).json({ok:false,error:'Falsches Passwort'});
+});
+app.get('/api/session',(req,res)=>res.status(validSession(req)?200:401).json({ok:validSession(req)}));
+app.post('/api/logout',(req,res)=>{res.setHeader('Set-Cookie','respectury_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0');res.json({ok:true});});
 
 app.use((req,res,next)=>{
-  res.setHeader('Access-Control-Allow-Origin','*');
+  if(req.path==='/api/login'||req.path==='/api/session'||req.path==='/api/logout'||req.method==='OPTIONS')return next();
+  if(!APP_PASSWORD||validSession(req))return next();
+  if(req.path.startsWith('/api/'))return res.status(401).json({ok:false,error:'Passwort erforderlich'});
+  return res.status(401).send(loginPage());
+});
+
+app.use((req,res,next)=>{
+  const origin=req.headers.origin;
+  if(origin){res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Access-Control-Allow-Credentials','true');}
   res.setHeader('Access-Control-Allow-Headers','Content-Type');
   res.setHeader('Access-Control-Allow-Methods','GET,POST,OPTIONS');
-  if(req.method==='OPTIONS') return res.sendStatus(204);
+  if(req.method==='OPTIONS')return res.sendStatus(204);
   next();
 });
+
+function loginPage(){return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RESPECTURY – Login</title><style>body{margin:0;min-height:100vh;background:#051425;color:#e8f4ff;font-family:Segoe UI,Arial,sans-serif;display:flex;align-items:center;justify-content:center}.box{width:min(420px,90%);background:#0a1f3a;border:1px solid #153b66;border-radius:14px;padding:28px;text-align:center;box-shadow:0 20px 70px #000}.logo{font-size:30px;font-weight:900;color:#ffc700}.sub{color:#7b9ab8;font-size:13px;line-height:1.5;margin:10px 0 20px}.input{width:100%;box-sizing:border-box;padding:12px;background:#020d1a;border:1px solid #153b66;border-radius:6px;color:#e8f4ff;margin-bottom:10px}.btn{width:100%;padding:12px;background:#00a8ff;border:0;border-radius:6px;font-weight:800;cursor:pointer}.err{color:#ff6b6b;font-size:12px;min-height:20px;margin-top:10px}</style></head><body><div class="box"><div class="logo">respectury.</div><h2>🔐 Geschützter Zugang</h2><div class="sub">Bitte Passwort eingeben, bevor RESPECTURY DIGITAL REPORT® gestartet wird.</div><form onsubmit="login(event)"><input id="p" class="input" type="password" autocomplete="current-password" placeholder="Passwort" autofocus><button class="btn">🔓 ANMELDEN</button><div id="e" class="err"></div></form></div><script>async function login(e){e.preventDefault();const p=document.getElementById('p').value;const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({password:p})});const d=await r.json().catch(()=>({}));if(r.ok&&d.ok)location.reload();else document.getElementById('e').textContent=d.error||'Anmeldung fehlgeschlagen.'}</script></body></html>`;}
+
 app.use(express.static(__dirname));
 
-function cleanDataUrl(value){
-  if(typeof value!=='string' || !value.startsWith('data:image/')) throw new Error('Ungültiges Bild.');
-  if(value.length>11_000_000) throw new Error('Bild ist für den Test zu groß.');
-  return value;
-}
-async function askVision(image,prompt){
-  const response=await client.responses.create({
-    model:process.env.OPENAI_MODEL||'gpt-5.6-luna',
-    input:[{role:'user',content:[{type:'input_text',text:prompt},{type:'input_image',image_url:image}]}],
-    max_output_tokens:900
-  });
-  return response.output_text||'';
-}
-function parseJson(text){
-  const cleaned=String(text).trim().replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'');
-  try{return JSON.parse(cleaned);}catch{}
-  const a=cleaned.indexOf('{'),b=cleaned.lastIndexOf('}');
-  if(a>=0&&b>a){try{return JSON.parse(cleaned.slice(a,b+1));}catch{}}
-  throw new Error('KI-Antwort konnte nicht als JSON gelesen werden.');
-}
+function cleanDataUrl(value){if(typeof value!=='string'||!value.startsWith('data:image/'))throw new Error('Ungültiges Bild.');if(value.length>11_000_000)throw new Error('Bild ist für den Test zu groß.');return value;}
+async function askVision(image,prompt){const response=await client.responses.create({model:process.env.OPENAI_MODEL||'gpt-5.6-luna',input:[{role:'user',content:[{type:'input_text',text:prompt},{type:'input_image',image_url:image}]}],max_output_tokens:1400});return response.output_text||'';}
+async function askText(prompt){const response=await client.responses.create({model:process.env.OPENAI_MODEL||'gpt-5.6-luna',input:prompt,max_output_tokens:3000});return response.output_text||'';}
+function parseJson(text){const cleaned=String(text).trim().replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'');try{return JSON.parse(cleaned);}catch{}const a=cleaned.indexOf('{'),b=cleaned.lastIndexOf('}');if(a>=0&&b>a){try{return JSON.parse(cleaned.slice(a,b+1));}catch{}}throw new Error('KI-Antwort konnte nicht als JSON gelesen werden.');}
+async function parseJsonWithRepair(text,shape){try{return parseJson(text);}catch(firstError){const repairPrompt=`Formatiere die folgende KI-Antwort in gültiges JSON um. Erhalte ausschließlich die vorhandenen Informationen. Erfinde nichts. Gib NUR das JSON zurück, ohne Markdown oder Erklärung. Erwartete Struktur: ${shape}\n\nFehlerhafte Antwort:\n${String(text).slice(0,18000)}`;const repaired=await askText(repairPrompt);try{return parseJson(repaired);}catch{throw firstError;}}}
 
 app.get('/api/health',(req,res)=>res.json({ok:true,service:'RESPECTURY KI TEST',model:process.env.OPENAI_MODEL||'gpt-5.6-luna'}));
+app.post('/api/meter-analyze',async(req,res)=>{try{const image=cleanDataUrl(req.body?.image);const type=String(req.body?.meterType||'Zähler');const unit=String(req.body?.unit||'');const mode=String(req.body?.mode||'Wohnungsübergabe');let focus='';if(mode==='Vorabnahme')focus='Achte zusätzlich darauf, ob der Zählerstand für die Vorabnahme nachvollziehbar dokumentiert ist.';else if(mode==='Leerstandskontrolle')focus='Achte zusätzlich auf den aktuellen Kontrollstand; aus einem Einzelbild darfst du keinen Verbrauchszeitraum oder unerwarteten Verbrauch behaupten.';else if(mode==='Bauzustands-Check')focus='Achte zusätzlich darauf, den Baustrom-/Bauwasser- oder sonstigen Baustellenzähler eindeutig zu dokumentieren; aus einem Einzelbild darfst du keine Abrechnung ableiten.';const prompt=`Du bist die Zählerfoto-KI für die deutsche RESPECTURY-Dokumentation. Auftragstyp: ${mode}. Analysiere ausschließlich den sichtbaren Zähler auf dem Foto. Lies den aktuellen Zählerstand so genau wie möglich. Erfinde niemals Ziffern. Wenn eine Ziffer nicht sicher lesbar ist, markiere die Unsicherheit. Bestimme, soweit sichtbar, Hersteller und Modell. ${focus} Gib NUR gültiges JSON zurück, ohne Markdown: {"reading":"","unit":"${unit}","manufacturer":"","model":"","confidence":"hoch|mittel|niedrig","notes":""}. Zählertyp: ${type}.`;const text=await askVision(image,prompt);const analysis=await parseJsonWithRepair(text, '{\"reading\":\"\",\"unit\":\"\",\"manufacturer\":\"\",\"model\":\"\",\"confidence\":\"hoch|mittel|niedrig\",\"notes\":\"\"}');res.json({ok:true,analysis});}catch(e){console.error(e);res.status(500).json({ok:false,error:e.message||'KI-Fehler'});}});
+app.post('/api/room-analyze',async(req,res)=>{try{const image=cleanDataUrl(req.body?.image);const room=String(req.body?.room||'Bereich');const area=String(req.body?.area||'Foto');const mode=String(req.body?.mode||'Wohnungsübergabe');const gewerk=String(req.body?.gewerk||'');const status=String(req.body?.status||'');const photoCaption=String(req.body?.photoCaption||'');const feststellungen=Array.isArray(req.body?.feststellungen)?req.body.feststellungen:[];const bemerkung=String(req.body?.bemerkung||'');let criteria='';if(mode==='Vorabnahme')criteria='Prüfe besonders sichtbare Mängel, Restarbeiten, Beschädigungen und Punkte, die vor der endgültigen Übergabe erledigt oder nachkontrolliert werden sollten.';else if(mode==='Leerstandskontrolle')criteria='Prüfe besonders sichtbare Hinweise auf Frostschäden, Wassereintritt/Feuchtigkeit, Schimmelanzeichen, Einbruchsspuren, Vandalismus, Beschädigungen und den allgemeinen Zustand einer leerstehenden Immobilie.';else if(mode==='Bauzustands-Check')criteria='Du arbeitest ausschließlich im BAUZUSTANDS-CHECK einer Baustelle. Prüfe sichtbare Bauzustände, Baufortschritt, unfertige oder offene Arbeiten, Risse, Abplatzungen, Oberflächenmängel und erkennbare Abweichungen. Berücksichtige Gewerk, Bereich, Foto-Bezeichnung, Zustandsstatus, Feststellungen und Bemerkungen des Bauleiters als Dokumentationskontext. Behaupte nicht, dass eine technische Norm, Statik oder Rechtsvorschrift verletzt wurde, wenn das Foto das nicht belegt.';else criteria='Prüfe besonders sichtbare Gebrauchsspuren, Kratzer, Dellen, Verschmutzungen, Beschädigungen, Oberflächenzustände und sonstige für eine Wohnungsübergabe relevante Auffälligkeiten.';const prompt=`Du bist die Foto-Prüf-KI für die deutsche RESPECTURY-Dokumentation. Auftragstyp: ${mode}. Analysiere nur sichtbare Merkmale auf diesem Foto. Bereich: ${room} / ${area}. ${criteria} ${mode==='Bauzustands-Check'?`Gewerk: ${gewerk||"nicht angegeben"}. Zustandsstatus: ${status||"nicht angegeben"}. Vom Bauleiter vergebene Foto-Bezeichnung: ${photoCaption||"nicht angegeben"}. Menschlich vergebene Zustandsbewertung dieses Fotos: ${String(req.body?.zustand||"nicht angegeben")}. Bereits erfasste Feststellungen: ${JSON.stringify(feststellungen)}. Bemerkung zu diesem Foto: ${bemerkung||"keine"}.`:``} Erfinde nichts und stelle keine Diagnose oder rechtliche Bewertung auf. Wenn etwas nicht eindeutig sichtbar ist, formuliere es als unklar bzw. prüfbedürftig. Gib NUR gültiges JSON zurück: {"summary":"kurze sachliche Zusammenfassung","findings":["..."],"recommendation":"kurze Empfehlung","confidence":"hoch|mittel|niedrig"}. Wenn nichts Auffälliges sichtbar ist, schreibe das ausdrücklich.`;const text=await askVision(image,prompt);const analysis=await parseJsonWithRepair(text, '{\"summary\":\"\",\"findings\":[],\"recommendation\":\"\",\"confidence\":\"hoch|mittel|niedrig\"}');res.json({ok:true,analysis});}catch(e){console.error(e);res.status(500).json({ok:false,error:e.message||'KI-Fehler'});}});
+app.post('/api/ai-report',async(req,res)=>{try{const data=req.body||{};const compact=JSON.stringify(data);if(compact.length>120000)throw new Error('Dokumentation ist für den Online-KI-Bericht zu umfangreich.');const mode=String(data.modus||'Wohnungsübergabe');let logic='';if(mode==='Vorabnahme')logic='Der Bericht ist ein Vorabnahmebericht für eine meist noch bewohnte oder teilmöblierte Wohnung. Arbeite als Dokumentationsassistent gemeinsam mit dem menschlichen Prüfer vor Ort. Ein gesetztes Häkchen in checkliste bedeutet: Der Prüfer hat diesen Punkt kontrolliert. Eine fehlende Fotografie bedeutet bei der Vorabnahme NICHT, dass der Punkt nicht geprüft wurde. Die Fotodokumentation dient vor allem der gezielten Dokumentation festgestellter Auffälligkeiten. Prüferbemerkungen sind Primärinformationen und müssen inhaltlich erhalten bleiben; formuliere sie professionell, aber ersetze sie nicht durch Vermutungen. Wenn ein Prüfpunkt angehakt ist und keine Beanstandung oder Bemerkung dazu vorliegt, darfst du ihn als kontrolliert ohne dokumentierte Beanstandung behandeln. Wenn ein Foto oder eine Bemerkung einen konkreten Mangel beschreibt, formuliere zusätzlich eine sachgerechte erforderliche Maßnahme, soweit sie aus den Daten ableitbar ist. Erfinde keine weiteren Mängel. Weise einem Mangel nicht eigenmächtig eine Kosten- oder Verantwortungspartei zu. Nutze vorhandene To-dos und die vom Prüfer erfasste Kostenregelung/Zusatzinformation/Einverständniserklärung, falls vorhanden. Diese Angaben sind Dokumentationsdaten des Prüfers; entscheide nicht selbst über die Kostenregelung und erzeuge keine rechtliche Aussage daraus. Verwende nicht die Formulierung "Vor-Ort-Prüfung empfohlen", weil der Prüfer bereits vor Ort arbeitet. Behandle Zählerstände als Vorabnahme-Dokumentation und nicht automatisch als finale Übergabewerte.';else if(mode==='Leerstandskontrolle')logic='Der Bericht ist eine Leerstandskontrolle. Schwerpunkt sind sichtbare Frost-/Wasser-/Feuchtehinweise, Schimmelanzeichen, Einbruchsspuren, Vandalismus, Beschädigungen, allgemeiner Zustand und dokumentierte Zählerstände. Behaupte keinen Verbrauch aus nur einem Einzelstand.';else if(mode==='Bauzustands-Check')logic='Der Bericht ist ausschließlich ein BAUZUSTANDS-CHECK für eine Baustelle. Das ist ein eigener Arbeitsmodus und darf nicht wie Wohnungsübergabe, Vorabnahme oder Leerstandskontrolle behandelt werden. Schwerpunkt sind sichtbarer Bauzustand, Baufortschritt, Gewerke, Baustellenbereiche, Zustandsstatus, Feststellungen, Foto-Bezeichnungen, Risse, unfertige oder offene Arbeiten und dokumentierte Abweichungen. Nutze die Angaben des Bauleiters als Primärdaten. Formuliere strukturierte Feststellungen und sinnvolle nächste Maßnahmen, ohne technische, statische oder rechtliche Gewissheit zu behaupten.';else logic='Der Bericht ist eine Wohnungsübergabe. Schwerpunkt sind sichtbare Gebrauchsspuren, Schäden, Verschmutzungen, Abnutzung, Zählerstände und offene Übergabepunkte.';const prompt=`Du bist der KI-Dokumentationsassistent von RESPECTURY und arbeitest als Team mit dem menschlichen Prüfer. Ziel ist, dem Prüfer Schreib-, Sortier- und Auswertungsarbeit abzunehmen und aus seinen Angaben, Checklisten, Bemerkungen, Fotos und vorhandenen KI-Fotoanalysen ein verständliches professionelles Protokoll zu erstellen. Der Mensch entscheidet und kontrolliert; die KI erfindet nichts und übernimmt keine Kosten- oder Verantwortungsentscheidung. Auftragstyp: ${mode}. ${logic} Verwende ausschließlich vorhandene Angaben und gespeicherte KI-Fotoanalysen. Erfinde keine Schäden, Zahlen, Zählerstände oder Tatsachen. Wenn ein Foto oder Bereich nicht ausreichend beurteilbar ist, sage das sachlich. Bei der Vorabnahme darfst du fehlende Fotos zu angehakten Prüfpunkten nicht als Dokumentationslücke ausgeben. Dokumentationslücken sind nur echte fehlende oder widersprüchliche Angaben, die für den konkreten Bericht erforderlich sind. Ordne Feststellungen immer dem vorhandenen Raum/Bereich zu. Formuliere aus eindeutig sichtbaren Mängeln sinnvolle nächste Maßnahmen, ohne technische oder rechtliche Gewissheit zu behaupten. Gib NUR gültiges JSON zurück, ohne Markdown, ohne Einleitung und ohne Text danach. Exakt mit dieser Struktur: {"summary":"max. 700 Zeichen","overview":"kurze Gesamteinschätzung","findings":["konkrete Feststellung mit Raumbezug"],"documentation_gaps":["fehlende oder nicht eindeutig beurteilbare Dokumentation"],"next_steps":["sachliche nächste Schritte"],"room_analysis":[{"room":"exakter vorhandener Raumname","summary":"kurze raumbezogene Zusammenfassung","findings":["sichtbare bzw. gespeicherte Feststellung"]}]}. Verwende für room_analysis ausschließlich Raum-Namen aus den gelieferten Daten. Daten: ${compact}`;const text=await askText(prompt);const report=await parseJsonWithRepair(text, '{\"summary\":\"\",\"overview\":\"\",\"findings\":[],\"documentation_gaps\":[],\"next_steps\":[],\"room_analysis\":[]}');res.json({ok:true,report});}catch(e){console.error(e);res.status(500).json({ok:false,error:e.message||'KI-Bericht fehlgeschlagen'});}});
 
-app.post('/api/meter-analyze',async(req,res)=>{
-  try{
-    const image=cleanDataUrl(req.body?.image);
-    const type=String(req.body?.meterType||'Zähler');
-    const unit=String(req.body?.unit||'');
-    const prompt=`Du bist die Zählerfoto-KI für die deutsche Dokumentations-App RESPECTURY. Analysiere ausschließlich den sichtbaren Zähler auf dem Foto. Lies den aktuellen Zählerstand so genau wie möglich. Erfinde niemals Ziffern. Wenn eine Ziffer nicht sicher lesbar ist, markiere die Unsicherheit. Bestimme, soweit sichtbar, Hersteller und Modell. Gib NUR gültiges JSON zurück, ohne Markdown: {"reading":"","unit":"${unit}","manufacturer":"","model":"","confidence":"hoch|mittel|niedrig","notes":""}. Zählertyp: ${type}.`;
-    const text=await askVision(image,prompt);
-    const analysis=parseJson(text);
-    res.json({ok:true,analysis});
-  }catch(e){console.error(e);res.status(500).json({ok:false,error:e.message||'KI-Fehler'});}
-});
-
-app.post('/api/room-analyze',async(req,res)=>{
-  try{
-    const image=cleanDataUrl(req.body?.image);
-    const room=String(req.body?.room||'Bereich');
-    const area=String(req.body?.area||'Foto');
-    const prompt=`Du bist die Foto-Prüf-KI für die deutsche Vorabnahme-/Wohnungsdokumentation RESPECTURY. Analysiere nur sichtbare Merkmale auf diesem Foto. Prüfe passend zum Bereich ${room} / ${area} insbesondere Oberflächen, sichtbare Risse, Abplatzungen, Kratzer, Dellen, Verfärbungen, Beschädigungen, Glas-/Rahmenzustand, sichtbare Feuchtigkeit oder andere erkennbare Auffälligkeiten. Behaupte nichts, was nicht sichtbar ist. Gib NUR gültiges JSON zurück: {"summary":"kurze sachliche Zusammenfassung","findings":["..."],"recommendation":"kurze Empfehlung","confidence":"hoch|mittel|niedrig"}. Wenn nichts Auffälliges sichtbar ist, schreibe das ausdrücklich.`;
-    const text=await askVision(image,prompt);
-    const analysis=parseJson(text);
-    res.json({ok:true,analysis});
-  }catch(e){console.error(e);res.status(500).json({ok:false,error:e.message||'KI-Fehler'});}
-});
-
-app.listen(PORT,'0.0.0.0',()=>{
-  console.log(`RESPECTURY KI-Testserver läuft: http://localhost:${PORT}`);
-  console.log(`Für das Handy: http://DEINE-PC-IP:${PORT}`);
-  if(!process.env.OPENAI_API_KEY) console.warn('WARNUNG: OPENAI_API_KEY ist noch nicht gesetzt.');
-});
+app.listen(PORT,'0.0.0.0',()=>{console.log(`RESPECTURY KI-Testserver läuft: http://localhost:${PORT}`);if(!process.env.OPENAI_API_KEY)console.warn('WARNUNG: OPENAI_API_KEY ist noch nicht gesetzt.');});
